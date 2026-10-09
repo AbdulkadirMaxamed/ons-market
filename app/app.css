@@ -1,0 +1,147 @@
+@import "tailwindcss" source(".");
+
+/* Design tokens: docs/02-design.md §13. Components use these through the Tailwind names below
+   (bg-bg, bg-surface, text-ink, text-up…), never raw colours. */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --surface-2: #f5f7f9;
+  --ink: #0b1220;
+  --ink-2: #3b4659;
+  --ink-3: #566175;
+  --rule: #dbe1e8;
+  --line: #0b1220;
+  --fill: rgb(11 18 32 / 0.06);
+  --accent: #0b1220;
+  --accent-ink: #ffffff;
+  --up: #167a3e;
+  --up-bg: #ddf2e5;
+  --down: #c0262d;
+  --down-bg: #fbe0e1;
+  --flat: #4b5563;
+  --flat-bg: #eceff3;
+  --missing: #8a94a3;
+  --callout: #0b1220;
+  --callout-ink: #ffffff;
+  --focus: #1559c9;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0d12;
+    --surface: #11161d;
+    --surface-2: #171d26;
+    --ink: #e9edf3;
+    --ink-2: #b9c2cf;
+    --ink-3: #8f9aab;
+    --rule: #252d39;
+    --line: #e9edf3;
+    --fill: rgb(233 237 243 / 0.07);
+    --accent: #e9edf3;
+    --accent-ink: #0a0d12;
+    --up: #6fdc98;
+    --up-bg: #11301d;
+    --down: #ff8a8f;
+    --down-bg: #3d1516;
+    --flat: #a3adbb;
+    --flat-bg: #1d2430;
+    --missing: #667181;
+    --callout: #e9edf3;
+    --callout-ink: #0a0d12;
+    --focus: #7fb0ff;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0a0d12;
+  --surface: #11161d;
+  --surface-2: #171d26;
+  --ink: #e9edf3;
+  --ink-2: #b9c2cf;
+  --ink-3: #8f9aab;
+  --rule: #252d39;
+  --line: #e9edf3;
+  --fill: rgb(233 237 243 / 0.07);
+  --accent: #e9edf3;
+  --accent-ink: #0a0d12;
+  --up: #6fdc98;
+  --up-bg: #11301d;
+  --down: #ff8a8f;
+  --down-bg: #3d1516;
+  --flat: #a3adbb;
+  --flat-bg: #1d2430;
+  --missing: #667181;
+  --callout: #e9edf3;
+  --callout-ink: #0a0d12;
+  --focus: #7fb0ff;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-up: var(--up);
+  --color-up-bg: var(--up-bg);
+  --color-down: var(--down);
+  --color-down-bg: var(--down-bg);
+  --color-flat: var(--flat);
+  --color-flat-bg: var(--flat-bg);
+  --color-missing: var(--missing);
+  --radius-card: 12px;
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--bg);
+    color: var(--ink);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 1.5;
+    font-feature-settings: "tnum";
+  }
+  h1,
+  h2,
+  h3 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+/* Ink-in entrance (docs/02-design.md §12). Set --i on the element to stagger. */
+@utility ink-in {
+  animation: ink-in 0.6s var(--ease-out-soft) both;
+  animation-delay: calc(var(--i, 0) * 80ms);
+}
+@keyframes ink-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ink-in {
+    animation: none;
+  }
+}

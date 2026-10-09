@@ -1,0 +1,451 @@
+<title>Is the Market Cooked? Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap">
+<style>
+/* Layout: Ticker look (light-first), Lexend, number-hero result page.
+   Hero box (number + change + drawing sparkline) → three cards → main chart → other places. */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --surface-2:#f5f7f9; --ink:#0b1220; --ink-2:#3b4659; --ink-3:#566175; --rule:#dbe1e8;
+  --line:#0b1220; --fill:rgba(11,18,32,.06); --accent:#0b1220; --accent-ink:#ffffff;
+  --up:#167a3e; --up-bg:#ddf2e5; --down:#c0262d; --down-bg:#fbe0e1; --flat:#4b5563; --flat-bg:#eceff3;
+  --missing:#8a94a3; --callout:#0b1220; --callout-ink:#ffffff; --focus:#1559c9;
+  --font:"Lexend",system-ui,sans-serif;
+  --r:12px; --r-sm:8px; --ease:cubic-bezier(.2,.7,.2,1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a0d12; --surface:#11161d; --surface-2:#171d26; --ink:#e9edf3; --ink-2:#b9c2cf; --ink-3:#8f9aab; --rule:#252d39;
+  --line:#e9edf3; --fill:rgba(233,237,243,.07); --accent:#e9edf3; --accent-ink:#0a0d12;
+  --up:#6fdc98; --up-bg:#11301d; --down:#ff8a8f; --down-bg:#3d1516; --flat:#a3adbb; --flat-bg:#1d2430;
+  --missing:#667181; --callout:#e9edf3; --callout-ink:#0a0d12; --focus:#7fb0ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0d12; --surface:#11161d; --surface-2:#171d26; --ink:#e9edf3; --ink-2:#b9c2cf; --ink-3:#8f9aab; --rule:#252d39;
+  --line:#e9edf3; --fill:rgba(233,237,243,.07); --accent:#e9edf3; --accent-ink:#0a0d12;
+  --up:#6fdc98; --up-bg:#11301d; --down:#ff8a8f; --down-bg:#3d1516; --flat:#a3adbb; --flat-bg:#1d2430;
+  --missing:#667181; --callout:#e9edf3; --callout-ink:#0a0d12; --focus:#7fb0ff; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font:300 16px/1.5 var(--font);font-feature-settings:"tnum"}
+.num{font-variant-numeric:tabular-nums}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px}
+@media (min-width:720px){.wrap{padding-inline:32px}}
+
+/* mockup bar (not part of the design) */
+.mbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--surface-2);border-bottom:1px dashed var(--rule)}
+.mbar .in{display:flex;gap:12px;align-items:center;overflow-x:auto;padding:6px 16px;font:400 12.5px var(--font);color:var(--ink-3)}
+.mbar b{font-weight:600;color:var(--ink-2);white-space:nowrap}
+.seg{display:flex;border:1px solid var(--rule);border-radius:999px;padding:2px;flex:none}
+.seg button{all:unset;cursor:pointer;padding:3px 10px;border-radius:999px;white-space:nowrap;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button:focus-visible{outline:2px solid var(--focus)}
+
+/* header */
+.hdr{background:var(--surface);border-bottom:1px solid var(--rule)}
+.hdr .wrap{display:flex;align-items:center;gap:12px;min-height:60px;flex-wrap:wrap;padding-block:8px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:17px;text-decoration:none;letter-spacing:-.01em}
+.logo .mk{font-size:11px;border:1px solid var(--rule);border-radius:6px;padding:2px 6px;color:var(--ink-2)}
+.logo i{font-style:normal;color:var(--ink-3);font-weight:400}
+.pillbtn{margin-left:auto;display:flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid var(--rule);border-radius:999px;background:var(--surface-2);color:var(--ink);font:400 14px var(--font);cursor:pointer;max-width:100%}
+.pillbtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* shared bits */
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r)}
+.chip{display:inline-flex;align-items:center;gap:6px;width:max-content;border-radius:999px;padding:4px 12px;font-weight:500;font-size:15px}
+.chip.up{background:var(--up-bg);color:var(--up)} .chip.down{background:var(--down-bg);color:var(--down)} .chip.flat,.chip.na{background:var(--flat-bg);color:var(--flat)}
+.muted{color:var(--ink-3)}
+.lbl{font-size:13px;color:var(--ink-3);font-weight:400}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* entrance: ink-in */
+.still .ink{animation:none}
+.ink{animation:ink .6s var(--ease) both;animation-delay:calc(var(--i,0) * 80ms)}
+@keyframes ink{from{opacity:0;filter:blur(3px);transform:translateY(3px)}}
+
+/* ---------- home ---------- */
+.hero{padding-block:56px 40px}
+@media (min-width:720px){.hero{padding-block:96px 64px}}
+.hero h1{font-size:clamp(40px,7.4vw,68px);line-height:1.02;letter-spacing:-.035em;font-weight:600}
+.hero .lede{font-size:clamp(17px,2.2vw,20px);color:var(--ink-2);margin-top:14px;max-width:40ch}
+.sform{display:grid;gap:12px;margin-top:30px;max-width:780px}
+@media (min-width:720px){.sform{grid-template-columns:1fr 1fr auto;align-items:end}}
+.field{display:grid;gap:6px;position:relative;min-width:0}
+.field label{font-weight:500;font-size:15px}
+.field input{width:100%;min-height:54px;padding:0 16px;border:1px solid var(--rule);border-radius:var(--r);background:var(--surface);color:var(--ink);font:400 17px var(--font)}
+.field input:focus{border-color:var(--ink);outline:none;box-shadow:0 0 0 3px var(--flat-bg)}
+.btn{min-height:54px;padding:0 24px;border:0;border-radius:var(--r);background:var(--accent);color:var(--accent-ink);font:500 16px var(--font);cursor:pointer}
+.sugg{position:absolute;top:100%;left:0;right:0;z-index:20;margin:4px 0 0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);box-shadow:0 14px 30px -14px rgba(0,0,0,.35);max-height:300px;overflow:auto}
+.sugg li{padding:10px 12px;border-radius:var(--r-sm);cursor:pointer;font-size:15px}
+.sugg li[aria-selected="true"],.sugg li:hover{background:var(--surface-2)}
+.sugg li small{display:block;color:var(--ink-3);font-size:12.5px}
+.toast{margin-top:12px;font-size:14.5px;color:var(--ink-2);min-height:1.5em}
+.try{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+.try span{font-size:14px;color:var(--ink-3)}
+.try button{min-height:38px;padding:0 14px;border:1px solid var(--rule);border-radius:999px;background:var(--surface);color:var(--ink);font:400 14px var(--font);cursor:pointer}
+.uk{display:grid;gap:16px;padding-block:8px 56px}
+@media (min-width:860px){.uk{grid-template-columns:1.2fr 1fr 1fr}}
+.uk .card{padding:20px}
+.uk .big{font-size:40px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin:6px 0 4px}
+.uk h3{font-size:16px;margin-bottom:8px}
+.uk ol{list-style:none;margin:0;padding:0}
+.uk li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule);font-size:15px}
+.uk li:last-child{border-bottom:0}
+.uk li span:first-child{min-width:0}
+
+/* ---------- result ---------- */
+.rhead{padding-block:28px 16px}
+.rhead h1{font-size:clamp(26px,4vw,38px);line-height:1.1;letter-spacing:-.025em}
+.rhead .sub{margin-top:6px;color:var(--ink-3);font-size:14.5px}
+.banner{margin-top:14px;padding:12px 14px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--rule);font-size:14.5px;color:var(--ink-2);max-width:72ch}
+.herobox{display:grid;gap:18px;padding:22px}
+@media (min-width:760px){.herobox{grid-template-columns:minmax(0,1fr) minmax(0,300px);align-items:center;padding:28px 32px}}
+.bignum{font-size:clamp(64px,13vw,104px);font-weight:500;letter-spacing:-.045em;line-height:.95}
+.unit{font-size:15.5px;color:var(--ink-2);margin-top:8px}
+.herobox .chip{margin-top:14px;font-size:16px;padding:6px 14px}
+.spark{display:grid;gap:6px}
+.spark svg{width:100%;height:auto;overflow:visible}
+.spark .cap{font-size:12.5px;color:var(--ink-3);display:flex;justify-content:space-between}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.cards .card{padding:14px 16px;display:grid;gap:4px;align-content:start;min-width:0}
+.cards .val{font-size:19px;font-weight:500}
+.cards .val.up{color:var(--up)} .cards .val.down{color:var(--down)} .cards .val.na{color:var(--ink-3)}
+.cards .sub{font-size:13px;color:var(--ink-3)}
+@media (max-width:560px){.cards{gap:6px}.cards .card{padding:10px;text-align:center}.cards .val{font-size:16px}.cards .sub{display:none}}
+.tip{border:0;background:none;color:var(--ink-3);text-decoration:underline dotted;text-underline-offset:3px;cursor:help;font:400 13px var(--font);padding:0;justify-self:start}
+@media (max-width:560px){.tip{justify-self:center}}
+.rulebox{font-size:14px;color:var(--ink-2);margin-top:10px;padding:12px 14px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--rule);max-width:70ch}
+.sec{margin-top:28px}
+.sechead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sechead h2{font-size:19px}
+.tabs{display:flex;gap:4px;border:1px solid var(--rule);border-radius:999px;padding:3px;background:var(--surface)}
+.tabs button{min-height:34px;min-width:44px;padding:0 10px;border:0;border-radius:999px;background:none;color:var(--ink-2);font:400 14px var(--font);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chartcard{position:relative;padding:14px 8px 8px}
+.chartcard svg{display:block;width:100%;height:auto;touch-action:pan-y}
+.callout{position:absolute;max-width:220px;background:var(--callout);color:var(--callout-ink);font-size:12.5px;line-height:1.35;padding:8px 10px;border-radius:var(--r-sm);pointer-events:none}
+.ctip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:6px;font-size:13px;white-space:nowrap;transform:translate(-50%,-115%)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-3);padding:8px 12px 4px}
+.legend i{display:inline-block;width:18px;height:12px;vertical-align:-1px;margin-right:6px;border-radius:2px}
+.lg-gap{background:repeating-linear-gradient(45deg,var(--missing) 0 2px,transparent 2px 5px)}
+.lg-avg{border-top:2px dashed var(--ink-3);height:0!important;vertical-align:4px!important}
+.linkbtn{border:0;background:none;color:var(--ink-2);text-decoration:underline;cursor:pointer;font:400 14px var(--font);padding:8px 0}
+.tablewrap{overflow-x:auto}
+.dtable{border-collapse:collapse;font-size:14.5px;min-width:300px}
+.dtable th,.dtable td{padding:6px 16px 6px 0;border-bottom:1px solid var(--rule);text-align:left;font-weight:400}
+.dtable th{color:var(--ink-3);font-size:13px}
+.dtable td.n{text-align:right}
+.places{list-style:none;margin:0;padding:4px 16px}
+.places li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--rule);font-size:15px}
+.places li:last-child{border-bottom:0}
+.places li.me{font-weight:500}
+.places .chg{font-size:13.5px;font-weight:500}
+.places .chg.up{color:var(--up)} .places .chg.down{color:var(--down)} .places .chg.na{color:var(--ink-3);font-weight:400}
+.signal{display:grid;gap:12px;padding:18px}
+@media (min-width:720px){.signal{grid-template-columns:1.3fr 1fr 1fr;align-items:center}}
+.signal .v{font-size:26px;font-weight:500}
+details.about{margin-top:28px;padding:4px 18px}
+details.about summary{cursor:pointer;padding:12px 0;font-weight:500}
+details.about dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 24px;margin:4px 0 12px;font-size:14.5px}
+details.about dt{font-size:12.5px;color:var(--ink-3)}
+details.about dd{margin:2px 0 0}
+details.about ul{margin:0 0 14px;padding-left:20px;font-size:14.5px;color:var(--ink-2);display:grid;gap:4px}
+.foot{padding-block:28px 48px;font-size:13px;color:var(--ink-3)}
+.foot p+p{margin-top:6px}
+
+@media (prefers-reduced-motion: reduce){.ink{animation:none}}
+</style>
+
+<div class="mbar" role="region" aria-label="Mockup controls"><div class="in">
+  <b>Mockup · real ONS data</b>
+  <div class="seg" id="m-page"></div><div class="seg" id="m-scen"></div><div class="seg" id="m-theme"></div>
+</div></div>
+<div id="app"></div>
+
+<script>
+const D = /*PAYLOAD*/null;
+const STILL = /still/.test(location.hash); if (STILL) document.documentElement.classList.add('still');
+
+/* ---------- state ---------- */
+let S = {page:'result', scen:'dev', cad:'monthly', theme:'auto', range:null, table:false, rule:false};
+try{ Object.assign(S, JSON.parse(localStorage.getItem('itmc-design')||'{}')); }catch(e){}
+const h = location.hash.slice(1);
+if (h){ S.page = /home/.test(h)?'home':'result'; S.theme = /dark/.test(h)?'dark':/light/.test(h)?'light':S.theme;
+  S.scen = /police/.test(h)?'police':'dev'; S.cad = /quarterly/.test(h)?'quarterly':'monthly'; }
+S.table = false; S.rule = false; S.range = null;
+const save = () => { try{ localStorage.setItem('itmc-design', JSON.stringify({page:S.page,scen:S.scen,cad:S.cad,theme:S.theme})); }catch(e){} };
+
+/* ---------- data helpers ---------- */
+const MIN = 30;
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const QL = ['January–March','April–June','July–September','October–December'], QS = ['Jan–Mar','Apr–Jun','Jul–Sep','Oct–Dec'];
+const ALL_WITHHELD = new Set(['Mar-26','2026Q1']);
+const fmt = n => n == null ? '–' : Math.round(n).toLocaleString('en-GB');
+const sc = s => s.charAt(0) + s.slice(1).toLowerCase().replace(/\bit\b/g,'IT');
+function pl(p, k){
+  if (/Q/.test(p)){ const y=p.slice(0,4), q=+p.slice(5); return k==='long'?`${QL[q-1]} ${y}`:k==='mid'?`${QS[q-1]} ${y}`:k==='axis'?y:`Q${q} ${y}`; }
+  const [m,yy]=p.split('-'), i=MON.indexOf(m), y=2000+ +yy; return k==='long'?`${MONL[i]} ${y}`:`${m} ${y}`;
+}
+const why = p => ALL_WITHHELD.has(p) ? `${pl(p,'mid')}: ONS withheld all figures after a data-supply problem.` : `${pl(p,'mid')}: ONS withheld this figure over data quality.`;
+function change(a, b){
+  if (a == null || b == null) return {s:'missing'};
+  if (b === 0) return {s:'zero', abs:a-b};
+  if (a < MIN || b < MIN) return {s:'small', abs:a-b};
+  return {s:'ok', abs:a-b, pct:(a-b)/b*100};
+}
+function metrics(v, P, cad){
+  let li = v.length-1; while (li>=0 && v[li]==null) li--;
+  const lag = cad==='M'?12:4, win = cad==='M'?60:20;
+  const m = {li, latest:v[li], period:P[li], newest:P[v.length-1], prevP:P[li-1], yaP:P[li-lag], ya:v[li-lag]};
+  m.prev = change(v[li], v[li-1] ?? null); m.yoy = change(v[li], v[li-lag] ?? null);
+  const w = v.slice(Math.max(0,li-win+1), li+1).filter(x=>x!=null);
+  m.avg = w.length >= win*.75 ? w.reduce((a,b)=>a+b,0)/w.length : null;
+  m.vsAvg = m.avg==null ? {s:'missing'} : change(v[li], m.avg);
+  if (cad==='M'){ const a=v.slice(li-2,li+1), b=v.slice(li-14,li-11);
+    m.roll = a.length===3 && b.length===3 && !a.concat(b).some(x=>x==null) ? change(a.reduce((x,y)=>x+y), b.reduce((x,y)=>x+y)) : {s:'missing'};
+    m.rollFrom = P[li-2]; }
+  const basis = cad==='M' && m.roll.s==='ok' ? m.roll : m.yoy;
+  m.basis = basis===m.yoy ? 'yoy' : 'roll';
+  m.trend = basis.s!=='ok' ? (basis.s==='small'?'small':'na') : basis.pct>=10?'up':basis.pct<=-10?'down':'flat';
+  return m;
+}
+const TREND = {up:['▲','Growing'], down:['▼','Shrinking'], flat:['►','Steady'], small:['·','Too few to tell'], na:['·','Not enough data']};
+const dirOf = c => c.s!=='ok' ? 'na' : Math.abs(c.pct)<.05 ? 'flat' : c.pct>0 ? 'up' : 'down';
+
+function model(){
+  const s = D.scen[S.scen], M = S.cad==='monthly';
+  const vm = {searched: s.short, short: M ? sc(s.name3) : s.short, occ: M ? sc(s.name3) : s.name, code: M ? s.code3 : s.code, place:'Manchester', region:'North West',
+    cad: M?'M':'Q', P: M?D.months:D.quarters, v: M?s.m3:s.q,
+    banner: M ? `Monthly figures for Manchester only exist for broader job groups, so this shows <b>${sc(s.name3).toLowerCase()}</b> (SOC ${s.code3}), which includes ${s.short.toLowerCase()}. Switch to <b>Quarterly</b> on the chart for ${s.short.toLowerCase()} only.` : null};
+  vm.m = metrics(vm.v, vm.P, vm.cad);
+  const c = M ? s.citiesM3 : s.citiesQ, lag = M?13:5;
+  const sum3 = (x,end) => { const a = x.slice(end-3,end); return a.length===3 && !a.some(v=>v==null) ? a.reduce((p,q)=>p+q) : null; };
+  vm.places = Object.entries(c).map(([n,x])=>({n:n.replace(', City of','').replace(' City',''), me:n==='Manchester', v:x[x.length-1],
+    cur: M ? sum3(x,x.length) : x[x.length-1], ya: M ? sum3(x,x.length-12) : x[x.length-lag]}))
+    .sort((a,b)=>(b.v??-1)-(a.v??-1)).slice(0,6);
+  return vm;
+}
+
+/* ---------- drawing helpers ---------- */
+function reveal(svg, W, x0, done){
+  const r = svg.querySelector('.rv'); if (!r) return;
+  if (STILL || matchMedia('(prefers-reduced-motion: reduce)').matches){ r.setAttribute('width', W); done && done(); return; }
+  const t0 = performance.now(), dur = 1400;
+  r.setAttribute('width', x0);
+  const tick = t => { const k = Math.min(1,(t-t0)/dur), e = 1-Math.pow(1-k,3); r.setAttribute('width', x0 + e*(W-x0)); if (k<1) requestAnimationFrame(tick); else done && done(); };
+  requestAnimationFrame(tick);
+}
+function segments(vals){ const out=[]; let c=[]; vals.forEach((v,i)=>{ if(v==null){ if(c.length) out.push(c); c=[]; } else c.push(i); }); if(c.length) out.push(c); return out; }
+function sparkSVG(vals){
+  const W=300, H=90, p=6, n=vals.length, max=Math.max(...vals.filter(v=>v!=null))*1.08;
+  const x=i=>p+i*(W-2*p)/(n-1), y=v=>H-p-v/max*(H-2*p);
+  let s='';
+  vals.forEach((v,i)=>{ if(v==null) s+=`<rect x="${x(i)-5}" y="${p}" width="10" height="${H-2*p}" fill="url(#sh)"/>`; });
+  segments(vals).forEach(sg=>{ const d=sg.map((i,k)=>`${k?'L':'M'}${x(i).toFixed(1)} ${y(vals[i]).toFixed(1)}`).join(' ');
+    s += sg.length>1 ? `<path d="${d} L${x(sg.at(-1))} ${H-p} L${x(sg[0])} ${H-p}Z" fill="var(--fill)"/><path d="${d}" fill="none" stroke="var(--line)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>` : `<circle cx="${x(sg[0])}" cy="${y(vals[sg[0]])}" r="2.5" fill="var(--line)"/>`; });
+  const li = n-1-[...vals].reverse().findIndex(v=>v!=null);
+  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><defs><pattern id="sh" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--missing)" stroke-width="1.6" opacity=".6"/></pattern><clipPath id="spc"><rect class="rv" x="0" y="-10" width="${W}" height="${H+20}"/></clipPath></defs>
+    <g clip-path="url(#spc)">${s}</g><circle class="enddot" cx="${x(li)}" cy="${y(vals[li])}" r="5" fill="var(--line)" stroke="var(--surface)" stroke-width="2" style="transition:opacity .3s"/></svg>`;
+}
+
+/* ---------- views ---------- */
+function header(result){
+  const s = D.scen[S.scen], who = s.short;
+  return `<header class="hdr"><div class="wrap"><a class="logo" href="#" data-go="home"><span class="mk" aria-hidden="true">▲▼</span>isthemarket<i>cooked</i></a>
+    ${result ? `<button class="pillbtn" data-go="home" aria-label="Change search"><span>${who} · Manchester</span><span aria-hidden="true">✎</span></button>` : `<a class="pillbtn" href="#" data-noop style="text-decoration:none"><span>About the data</span></a>`}</div></header>`;
+}
+const footer = () => `<footer class="foot"><div class="wrap"><p>Source: Office for National Statistics, Labour demand volumes by SOC 2020, UK. Published 25 September 2026. Official statistics in development. Contains public sector information licensed under the Open Government Licence v3.0.</p><p>Trend words and averages are our reading of the ONS figures, not an ONS measure. Design mockup with real figures.</p></div></footer>`;
+
+function home(){
+  const u = D.uk_total, n = u.length, yoy = change(u[n-1], u[n-13]), d = dirOf(yoy);
+  const mv = (arr, dir) => arr.slice(0,4).map(([nm,p])=>`<li><span>${nm}</span><span class="num" style="color:var(--${dir});font-weight:500;white-space:nowrap">${dir==='up'?'▲':'▼'} ${Math.abs(p).toFixed(0)}%<span class="sr"> ${dir==='up'?'more':'fewer'} adverts</span></span></li>`).join('');
+  return `${header(false)}<main class="wrap">
+    <section class="hero">
+      <div class="ink" style="--i:0"><h1>Is the market cooked?</h1><p class="lede">See how many jobs like yours are being advertised where you live, and whether that’s going up or down. Real ONS figures, free.</p></div>
+      <form class="sform ink" style="--i:1" id="sform" autocomplete="off">
+        <div class="field"><label for="q-job">Job</label><input id="q-job" placeholder="Software developer" role="combobox" aria-expanded="false" aria-controls="s-job" aria-autocomplete="list"><ul class="sugg" id="s-job" role="listbox" hidden></ul></div>
+        <div class="field"><label for="q-where">Where</label><input id="q-where" placeholder="Manchester" role="combobox" aria-expanded="false" aria-controls="s-where" aria-autocomplete="list"><ul class="sugg" id="s-where" role="listbox" hidden></ul></div>
+        <button class="btn" type="submit">Check the market</button>
+      </form>
+      <p class="toast" id="toast" role="status"></p>
+      <div class="try ink" style="--i:2"><span>Try</span><button data-pick="dev">Software developers in Manchester</button><button data-pick="police">Senior police officers in Manchester</button></div>
+    </section>
+    <section class="uk" aria-label="UK overview">
+      <div class="card ink" style="--i:3"><p class="lbl">UK, all jobs · ${pl(D.months[n-1],'long')}</p><p class="big num">${fmt(u[n-1])}</p><p class="muted" style="font-size:14.5px">new online job adverts</p>
+        <p style="margin-top:12px"><span class="chip ${d}">${d==='up'?'▲':'▼'} ${Math.abs(yoy.pct).toFixed(1)}% vs ${pl(D.months[n-13],'short')}</span></p></div>
+      <div class="card ink" style="--i:4"><h3>Rising fastest</h3><ol>${mv(D.growth,'up')}</ol></div>
+      <div class="card ink" style="--i:5"><h3>Falling fastest</h3><ol>${mv(D.decline,'down')}</ol></div>
+      <p class="muted ink" style="--i:6;font-size:13px;grid-column:1/-1">Rising and falling: UK, Jun–Aug 2026 compared with Jun–Aug 2025, jobs with at least 1,500 adverts a year earlier.</p>
+    </section></main>${footer()}`;
+}
+
+function result(){
+  const vm = model(), m = vm.m, unitP = vm.cad==='M'?'month':'quarter';
+  const ranges = vm.cad==='M' ? ['6M','1Y','3Y','5Y','All'] : ['1Y','3Y','5Y','All'];
+  if (!ranges.includes(S.range)) S.range = vm.cad==='M' ? '1Y' : '3Y';
+  // Monthly: compare the last 3 months with the same 3 months a year earlier (ONS advises against single-month changes)
+  const useRoll = vm.cad==='M' && m.roll.s==='ok', hc = useRoll ? m.roll : m.yoy, yd = dirOf(hc);
+  const span = useRoll ? `${pl(m.rollFrom,'short').slice(0,3)}–${pl(m.period,'short').slice(0,3)}: ` : '';
+  const heroChip = hc.s==='ok' ? `<span class="chip ${yd}"><span aria-hidden="true">${TREND[yd==='na'?'na':yd][0]}</span>${span}${Math.abs(hc.pct).toFixed(1)}% ${hc.pct<0?'fewer':'more'} than a year ago</span>`
+    : `<span class="chip na">${hc.s==='small'?'Too few adverts to compare':'No figure from a year ago'}</span>`;
+  const spark = vm.v.slice(-(vm.cad==='M'?24:12));
+  const cardVal = (c, words) => c.s==='ok' ? `<span class="val ${dirOf(c)}"><span aria-hidden="true">${c.pct<0?'▼':'▲'}</span> ${Math.round(Math.abs(c.pct))}% ${c.pct<0?words[1]:words[0]}</span>` : `<span class="val na">${c.s==='small'?'Too few':'No figure'}</span>`;
+  const t = TREND[m.trend];
+  const basisTxt = m.basis==='roll' ? 'the last 3 months with the same 3 months a year earlier' : `the latest ${unitP} with the same ${unitP} a year earlier`;
+  return `${header(true)}<main class="wrap">
+    <section class="rhead ink" style="--i:0"><h1>${vm.searched} in ${vm.place}</h1>
+      <p class="sub">${vm.occ} · SOC ${vm.code} · ${vm.place}, ${vm.region}</p>
+      ${vm.banner?`<p class="banner">${vm.banner}</p>`:''}
+      ${m.newest!==m.period?`<p class="banner">No figure yet for ${pl(m.newest,'long')}. Showing the latest available.</p>`:''}</section>
+
+    <section class="card herobox ink" style="--i:1" aria-label="Headline">
+      <div><p class="bignum num">${fmt(m.latest)}</p><p class="unit">new online job adverts${vm.cad==='M'?` for ${vm.short.toLowerCase()}`:''} · ${pl(m.period,'long')}</p>${heroChip}</div>
+      <div class="spark">${sparkSVG(spark)}<div class="cap"><span>${pl(vm.P[vm.P.length-spark.length],'short')}</span><span>${pl(m.period,'short')}</span></div></div>
+    </section>
+
+    <section class="cards" aria-label="Comparisons">
+      <div class="card ink" style="--i:2"><span class="lbl">5-year average</span>${cardVal(m.vsAvg,['above','below'])}<span class="sub">${m.avg?`Average ${fmt(m.avg)} a ${unitP}`:'Not enough history'}</span></div>
+      <div class="card ink" style="--i:3"><span class="lbl">Last ${unitP}</span>${cardVal(m.prev,['more','fewer'])}<span class="sub">${m.prev.s==='missing'?`${pl(m.prevP,'mid')} withheld by ONS`:m.prev.s==='ok'?`${fmt(m.latest-m.prev.abs)} in ${pl(m.prevP,'mid')}`:''}</span></div>
+      <div class="card ink" style="--i:4"><span class="lbl">Trend</span><span class="val ${['up','down','flat'].includes(m.trend)?m.trend:'na'}"><span aria-hidden="true">${t[0]}</span> ${t[1]}</span><button class="tip" data-act="rule" aria-expanded="${S.rule}">How we decide</button></div>
+    </section>
+    <p class="rulebox" id="rulebox" ${S.rule?'':'hidden'}>We compare ${basisTxt}. Up 10% or more is <b>Growing</b>, down 10% or more is <b>Shrinking</b>, in between is <b>Steady</b>. Under ${MIN} adverts we don’t call a trend. This is our reading of ONS data, not an ONS measure.</p>
+
+    <section class="sec" aria-labelledby="ch-h">
+      <div class="sechead"><h2 id="ch-h">Adverts per ${unitP}</h2><div class="tabs" role="group" aria-label="Show figures by"><button data-cad="monthly" aria-pressed="${vm.cad==='M'}">Monthly</button><button data-cad="quarterly" aria-pressed="${vm.cad==='Q'}">Quarterly</button></div></div>
+      <div class="sechead" style="justify-content:flex-end"><div class="tabs" role="group" aria-label="Time range">${ranges.map(r=>`<button data-range="${r}" aria-pressed="${S.range===r}">${r}</button>`).join('')}</div></div>
+      <div class="card chartcard" id="chart"></div>
+      <button class="linkbtn" data-act="table" aria-expanded="${S.table}">${S.table?'Hide':'Show'} the numbers</button><div id="ctable"></div>
+    </section>
+
+
+    <section class="sec"><div class="sechead"><h2>${vm.short} in other places</h2><span class="muted" style="font-size:13.5px">${pl(m.period,'mid')}</span></div>
+      <ol class="card places">${vm.places.map(p=>{ const c=change(p.cur,p.ya), d=dirOf(c);
+        return `<li class="${p.me?'me':''}"><span>${p.n}</span><span class="num">${p.v==null?'<span class="muted">No figure</span>':fmt(p.v)}</span><span class="chg ${d}">${c.s==='ok'?`${c.pct<0?'▼':'▲'} ${Math.abs(c.pct).toFixed(0)}%<span class="sr"> ${c.pct<0?'fewer':'more'} than a year ago</span>`:c.s==='small'?'too few':'–'}</span></li>`; }).join('')}</ol>
+      <p class="muted" style="font-size:13px;margin-top:8px">${vm.cad==='M' ? `Change compares ${pl(m.rollFrom,'short').slice(0,3)}–${pl(m.period,'short').slice(0,3)} with the same 3 months a year earlier.` : 'Change is compared with the same quarter a year earlier.'}</p></section>
+
+    <details class="card about"><summary>About this data</summary>
+      <dl><div><dt>Source</dt><dd>Office for National Statistics</dd></div><div><dt>Measure</dt><dd>New online job adverts</dd></div><div><dt>Latest figure</dt><dd>${pl(m.period,'long')}</dd></div><div><dt>Published</dt><dd>25 September 2026</dd></div></dl>
+      <ul><li>An advert isn’t the same as a job. ONS removes duplicates it can detect, but some roles are still advertised more than once.</li><li>Some jobs are never advertised online.</li><li>Gaps mean ONS has no reliable figure. They never mean zero adverts.</li><li>ONS says short-term changes since November 2025 are less reliable; compare over longer periods.</li></ul>
+    </details>
+  </main>${footer()}`;
+}
+
+/* ---------- main chart ---------- */
+function drawChart(){
+  const box = document.getElementById('chart'); if (!box) return;
+  const vm = model();
+  const take = {'6M':6,'1Y':vm.cad==='M'?12:4,'3Y':vm.cad==='M'?36:12,'5Y':vm.cad==='M'?60:20,'All':1e9}[S.range];
+  const n = vm.v.length, st = Math.max(0, n-take), vals = vm.v.slice(st), P = vm.P.slice(st);
+  const W = Math.max(280, box.clientWidth-16), H = W<560 ? 230 : 300;
+  const pl0 = 46, pr = 16, pt = 18, pb = 30, iw = W-pl0-pr, ih = H-pt-pb;
+  const vmax = Math.max(...vals.filter(v=>v!=null), vm.m.avg||0, 1)*1.08;
+  const mag = Math.pow(10, Math.floor(Math.log10(vmax))), step = [.1,.2,.25,.5,1,2,2.5,5,10].map(k=>k*mag).find(s=>vmax/s<=4);
+  const ymax = Math.ceil(vmax/step)*step, N = vals.length;
+  const x = i => pl0 + (N===1 ? iw/2 : i*iw/(N-1)), y = v => pt + ih - v/ymax*ih, cw = Math.max(6, iw/Math.max(1,N-1)*.8);
+  let g = '';
+  for (let t=0; t<=ymax+1e-9; t+=step) g += `<line x1="${pl0}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)"/><text x="${pl0-8}" y="${y(t)+4}" text-anchor="end" font-size="12" fill="var(--ink-3)">${fmt(t)}</text>`;
+  vals.forEach((v,i)=>{ if (v==null) g += `<rect x="${x(i)-cw/2}" y="${pt}" width="${cw}" height="${ih}" fill="url(#hatch)"/>`; });
+  const yr = P.map((p,i)=>({p,i})).filter(o=>/Q1$/.test(o.p)||/^Jan/.test(o.p)), ev = Math.ceil(yr.length/Math.max(1,Math.floor(iw/64)));
+  (yr.length>=2 ? yr.filter((o,k)=>k%ev===0).map(o=>({i:o.i,t:/Q/.test(o.p)?o.p.slice(0,4):String(2000+ +o.p.slice(4))})) : P.map((p,i)=>({i,t:pl(p,'short')})).filter((o,k,a)=>a.length<=6||k%Math.ceil(a.length/5)===0))
+    .forEach(o => g += `<text x="${x(o.i)}" y="${H-9}" text-anchor="middle" font-size="12" fill="var(--ink-3)">${o.t}</text>`);
+  if (vm.m.avg) g += `<line x1="${pl0}" x2="${W-pr}" y1="${y(vm.m.avg)}" y2="${y(vm.m.avg)}" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="5 4"/><text x="${pl0+6}" y="${y(vm.m.avg)-6}" font-size="12" fill="var(--ink-2)">5-year average ${fmt(vm.m.avg)}</text>`;
+  let L = '';
+  segments(vals).forEach(sg=>{ const d = sg.map((i,k)=>`${k?'L':'M'}${x(i).toFixed(1)} ${y(vals[i]).toFixed(1)}`).join(' ');
+    L += sg.length>1 ? `<path d="${d} L${x(sg.at(-1))} ${y(0)} L${x(sg[0])} ${y(0)}Z" fill="var(--fill)"/><path d="${d}" fill="none" stroke="var(--line)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` : `<circle cx="${x(sg[0])}" cy="${y(vals[sg[0]])}" r="3.5" fill="var(--line)"/>`; });
+  const li = N-1-[...vals].reverse().findIndex(v=>v!=null);
+  const label = `Chart of new online job adverts per ${vm.cad==='M'?'month':'quarter'} from ${pl(P[0],'short')} to ${pl(P[N-1],'short')}. Latest ${fmt(vm.m.latest)}. Use the arrow keys to read each value.`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${label}" tabindex="0">
+    <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--surface)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--missing)" stroke-width="2" opacity=".55"/></pattern>
+    <clipPath id="mc"><rect class="rv" x="0" y="0" width="${W}" height="${H}"/></clipPath></defs>
+    ${g}<g clip-path="url(#mc)">${L}<circle cx="${x(li)}" cy="${y(vals[li])}" r="5.5" fill="var(--line)" stroke="var(--surface)" stroke-width="2.5"/></g>
+    <line id="xh" y1="${pt}" y2="${pt+ih}" stroke="var(--ink-2)" visibility="hidden"/></svg>
+    <div class="ctip" id="ctip" hidden></div>
+    <div class="legend"><span><i class="lg-gap"></i>No data (withheld by ONS)</span>${vm.m.avg?'<span><i class="lg-avg"></i>5-year average</span>':''}</div>`;
+  // callout on the most recent gap (6A + 6D)
+  const gi = vals.lastIndexOf(null);
+  if (gi >= 0 && box.clientWidth < 560){
+    box.querySelector('.legend span').innerHTML = '<i class="lg-gap"></i>' + why(P[gi]);
+  } else if (gi >= 0){
+    const c = document.createElement('div'); c.className = 'callout'; c.textContent = why(P[gi]); box.appendChild(c);
+    const sx = box.querySelector('svg').clientWidth / W, gx = x(gi)*sx + 8;
+    const left = Math.max(8, Math.min(gx - c.offsetWidth - 10, box.clientWidth - c.offsetWidth - 8));
+    c.style.left = (gx > c.offsetWidth + 30 ? left : Math.min(gx + 14, box.clientWidth - c.offsetWidth - 8)) + 'px';
+    c.style.top = (pt*sx + 12) + 'px';
+  }
+  const svg = box.querySelector('svg'); reveal(svg, W, pl0);
+  const tip = box.querySelector('#ctip'), xh = box.querySelector('#xh'); let at = li;
+  const show = i => { at = Math.max(0, Math.min(N-1, i)); const k = svg.clientWidth/W;
+    xh.setAttribute('x1', x(at)); xh.setAttribute('x2', x(at)); xh.setAttribute('visibility','visible');
+    tip.hidden = false; tip.style.left = Math.min(Math.max(x(at)*k+8, 80), box.clientWidth-80)+'px'; tip.style.top = ((vals[at]==null?pt+ih/2:y(vals[at]))*k+14)+'px';
+    tip.textContent = `${pl(P[at],'short')} · ${vals[at]==null?'No data':fmt(vals[at])+' adverts'}`; };
+  const hide = () => { tip.hidden = true; xh.setAttribute('visibility','hidden'); };
+  svg.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(); show(Math.round(((e.clientX-r.left)/r.width*W - pl0)/iw*(N-1))); });
+  svg.addEventListener('pointerleave', hide); svg.addEventListener('blur', hide); svg.addEventListener('focus', () => show(at));
+  svg.addEventListener('keydown', e => { if (e.key==='ArrowLeft'){show(at-1);e.preventDefault();} if (e.key==='ArrowRight'){show(at+1);e.preventDefault();} });
+  document.getElementById('ctable').innerHTML = S.table ? `<div class="card tablewrap" style="padding:8px 16px"><table class="dtable"><thead><tr><th scope="col">Period</th><th scope="col" style="text-align:right">Adverts</th></tr></thead><tbody>${P.map((p,i)=>`<tr><td>${pl(p,'long')}</td><td class="n num">${vals[i]==null?'No data':fmt(vals[i])}</td></tr>`).reverse().join('')}</tbody></table></div>` : '';
+}
+
+/* ---------- search ---------- */
+function wireSearch(){
+  const occ = D.occupations.map(([c,n])=>({c,n}));
+  const setup = (inp, list, src, show) => {
+    let items=[], sel=-1;
+    const close = () => { list.hidden=true; inp.setAttribute('aria-expanded','false'); sel=-1; };
+    const draw = () => { list.innerHTML = items.map((it,i)=>`<li role="option" id="${list.id}-${i}" aria-selected="${i===sel}">${show(it)}</li>`).join(''); list.hidden=!items.length; inp.setAttribute('aria-expanded',String(!!items.length)); };
+    const pick = it => { inp.value = it.n||it; inp.dataset.code = it.c||''; close(); };
+    inp.addEventListener('input', () => { const q = inp.value.trim().toLowerCase(); items = q.length<2?[]:src(q).slice(0,6); sel=-1; draw(); });
+    inp.addEventListener('keydown', e => { if (list.hidden) return;
+      if (e.key==='ArrowDown'){sel=Math.min(items.length-1,sel+1);draw();e.preventDefault();}
+      if (e.key==='ArrowUp'){sel=Math.max(0,sel-1);draw();e.preventDefault();}
+      if (e.key==='Enter'&&sel>=0){pick(items[sel]);e.preventDefault();}
+      if (e.key==='Escape') close(); });
+    list.addEventListener('mousedown', e => { const li = e.target.closest('li'); if (li){ pick(items[+li.id.split('-').pop()]); e.preventDefault(); } });
+    inp.addEventListener('blur', () => setTimeout(close,120));
+  };
+  setup(document.getElementById('q-job'), document.getElementById('s-job'), q=>occ.filter(o=>o.n.toLowerCase().includes(q)||o.c.startsWith(q)), o=>`${o.n}<small>SOC ${o.c}</small>`);
+  setup(document.getElementById('q-where'), document.getElementById('s-where'), q=>D.places.filter(p=>p.toLowerCase().includes(q)), p=>p);
+  document.getElementById('sform').addEventListener('submit', e => {
+    e.preventDefault();
+    const j = document.getElementById('q-job'), w = document.getElementById('q-where').value.trim().toLowerCase(), t = document.getElementById('toast');
+    const code = j.dataset.code || (/software|program|develop/i.test(j.value)?'2134':/police/i.test(j.value)?'1162':'');
+    if (!j.value.trim()){ t.textContent='Pick a job to check.'; j.focus(); return; }
+    if ((code==='2134'||code==='1162') && (!w||w==='manchester')){ S.scen = code==='2134'?'dev':'police'; S.page='result'; render(); scrollTo(0,0); return; }
+    t.textContent = 'This mockup only has software developers and senior police officers in Manchester. The real site covers all 412 jobs and 342 areas.';
+  });
+}
+
+/* ---------- render ---------- */
+function bar(){
+  const seg = (id,key,opts) => document.getElementById(id).innerHTML = Object.entries(opts).map(([k,l])=>`<button data-k="${key}" data-v="${k}" aria-pressed="${S[key]===k}">${l}</button>`).join('');
+  seg('m-page','page',{home:'Home',result:'Result'}); seg('m-scen','scen',{dev:'Software devs',police:'Small numbers'});
+  seg('m-theme','theme',{auto:'Auto',light:'Light',dark:'Dark'});
+  if (S.theme==='auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', S.theme);
+}
+function render(){
+  save(); bar();
+  const app = document.getElementById('app');
+  app.innerHTML = S.page==='home' ? home() : result();
+  if (S.page==='home') wireSearch();
+  else {
+    drawChart();
+    const sp = app.querySelector('.spark svg'), dot = sp && sp.querySelector('.enddot');
+    if (sp){ if (!STILL && !matchMedia('(prefers-reduced-motion: reduce)').matches) dot.style.opacity = 0; reveal(sp, 300, 0, () => dot.style.opacity = 1); }
+  }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button,a'); if (!b) return;
+  if (b.dataset.k){ S[b.dataset.k]=b.dataset.v; if (b.dataset.k==='cad') S.range=null; render(); return; }
+  if (b.dataset.go){ e.preventDefault(); S.page=b.dataset.go; render(); scrollTo(0,0); return; }
+  if (b.hasAttribute('data-noop')){ e.preventDefault(); return; }
+  if (b.dataset.pick){ S.scen=b.dataset.pick; S.page='result'; render(); scrollTo(0,0); return; }
+  if (b.dataset.cad){ if (S.cad!==b.dataset.cad){ S.cad=b.dataset.cad; S.range=null; const y=scrollY; render(); scrollTo(0,y); } return; }
+  if (b.dataset.range){ S.range=b.dataset.range; document.querySelectorAll('[data-range]').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); drawChart(); return; }
+  if (b.dataset.act==='table'){ S.table=!S.table; b.textContent=(S.table?'Hide':'Show')+' the numbers'; b.setAttribute('aria-expanded',S.table); drawChart(); return; }
+  if (b.dataset.act==='rule'){ S.rule=!S.rule; b.setAttribute('aria-expanded',S.rule); document.getElementById('rulebox').hidden=!S.rule; return; }
+});
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawChart, 120); });
+render();
+</script>

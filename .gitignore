@@ -1,0 +1,27 @@
+# ONS source files and generated data (see docs/01-architecture.md §2)
+*.xlsx
+data/
+public/data/
+
+# Node / React Router
+node_modules/
+/.react-router/
+/build/
+*.tsbuildinfo
+
+# Cloudflare
+.mf
+.wrangler
+.dev.vars*
+worker-configuration.d.ts
+!.dev.vars.example
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+
+# Misc
+.DS_Store
+.env
+!.env.example

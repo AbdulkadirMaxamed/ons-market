@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Design collages</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Chivo+Mono:wght@400;600&family=Chivo:wght@400;600;800&family=DM+Mono:wght@400;500&family=Figtree:wght@400;600;700&family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Lexend:wght@300;400;600;700&family=Manrope:wght@400;600;800&family=Overpass+Mono:wght@400;600&family=Overpass:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;800&family=Public+Sans:wght@400;600;800&family=Rubik:wght@400;500;700&family=Source+Sans+3:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&display=block">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#e9eaed;color:#111;font:16px/1.4 "Public Sans",system-ui,sans-serif;width:1680px}
+.page{padding:44px 48px 56px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px;border-bottom:3px solid #111;padding-bottom:18px}
+.top h1{margin:0;font:800 40px/1.05 "Public Sans";letter-spacing:-.02em}
+.top p{margin:6px 0 0;font-size:18px;color:#444;max-width:80ch}
+.top .ask{font:700 18px "Public Sans";background:#111;color:#fff;padding:10px 16px;border-radius:999px;white-space:nowrap}
+.grid{display:grid;gap:28px 24px}
+.item{display:grid;gap:10px;align-content:start}
+.frame{position:relative;overflow:hidden;border-radius:10px;box-shadow:0 1px 0 rgba(0,0,0,.08),0 14px 30px -18px rgba(0,0,0,.45);background:#fff}
+.badge{position:absolute;top:10px;left:10px;z-index:5;width:46px;height:46px;border-radius:50%;background:#111;color:#fff;display:grid;place-items:center;font:800 24px "Public Sans";box-shadow:0 0 0 3px #fff}
+.cap{display:flex;gap:10px;align-items:baseline}
+.cap b{font:800 20px "Public Sans"}
+.cap span{font-size:15.5px;color:#444}
+.num{font-variant-numeric:tabular-nums}
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="page" id="page"></div>
+<script>
+/* Real ONS data: Manchester, SOC 2134, 2021Q3–2026Q2 (Table 5) and UK SOC 2134 summed from Table 3 months. */
+const Q = ['2021Q3','2021Q4','2022Q1','2022Q2','2022Q3','2022Q4','2023Q1','2023Q2','2023Q3','2023Q4','2024Q1','2024Q2','2024Q3','2024Q4','2025Q1','2025Q2','2025Q3','2025Q4','2026Q1','2026Q2'];
+const MAN = [4135,3968,4174,4248,4293,4228,3624,2450,2138,1515,1511,1150,1008,844,1192,1673,1413,1421,null,1362];
+const UK = [91941,85964,99876,94260,91447,87141,72292,51255,39175,31483,30827,26071,23360,18711,25848,32901,27040,28027,null,32122];
+const AVG = 2439;
+const CITIES = [['London',7421,9627],['Manchester',1362,1673],['Bristol',732,1204],['Glasgow',679,1064],['Leeds',664,1140],['Birmingham',657,1399]];
+const fmt = n => n==null ? '–' : n.toLocaleString('en-GB');
+
+/* ---------- generic chart ---------- */
+function chart(o){
+  const {w=520,h=200,vals=MAN,line='#111',fill=null,axis='#999',grid='#e5e5e5',type='line',gap='hatch',avg=false,band=false,compare=null,width=2.5,labels=true,font='inherit',missing='#999',bg='transparent',dot=true,glow=false} = o;
+  const pl = labels?44:8, pr=12, pt=12, pb = labels?24:8, iw=w-pl-pr, ih=h-pt-pb;
+  const all = vals.filter(v=>v!=null), max = Math.max(...all, avg?AVG:0)*1.1;
+  const ymax = Math.ceil(max/1000)*1000;
+  const n = vals.length, x = i => pl + (type==='bar' ? (i+.5)*iw/n : i*iw/(n-1)), y = v => pt + ih - v/ymax*ih;
+  const id = 'h'+Math.random().toString(36).slice(2,7);
+  let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="background:${bg};font-family:${font}"><defs><pattern id="${id}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="${missing}" stroke-width="2" opacity=".6"/></pattern>${glow?`<filter id="g${id}"><feGaussianBlur stdDeviation="3"/></filter>`:''}</defs>`;
+  if (labels) for (let t=0;t<=ymax;t+=ymax/4) s += `<line x1="${pl}" x2="${w-pr}" y1="${y(t)}" y2="${y(t)}" stroke="${grid}"/><text x="${pl-6}" y="${y(t)+4}" font-size="11" text-anchor="end" fill="${axis}">${fmt(t)}</text>`;
+  if (labels) Q.forEach((q,i)=>{ if (q.endsWith('Q1')) s += `<text x="${x(i)}" y="${h-6}" font-size="11" text-anchor="middle" fill="${axis}">${q.slice(0,4)}</text>`; });
+  const cw = type==='bar' ? iw/n*.7 : iw/(n-1);
+  if (band){ const lo=Math.min(...all.slice(-12)), hi=Math.max(...all.slice(-20)); s += `<rect x="${pl}" y="${y(hi)}" width="${iw}" height="${y(lo)-y(hi)}" fill="${line}" opacity=".08"/>`; }
+  vals.forEach((v,i)=>{ if (v==null){
+    if (gap==='hatch') s += `<rect x="${x(i)-cw/2}" y="${pt}" width="${cw}" height="${ih}" fill="url(#${id})"/>`;
+    if (gap==='label') s += `<text x="${x(i)}" y="${pt+ih/2}" font-size="13" font-weight="600" text-anchor="middle" fill="${missing}" transform="rotate(-90 ${x(i)} ${pt+ih/2})">no data</text>`;
+    if (gap==='cross') s += `<text x="${x(i)}" y="${pt+ih-4}" font-size="14" font-weight="700" text-anchor="middle" fill="${missing}">×</text>`;
+    if (gap==='band') s += `<rect x="${x(i)-cw/2}" y="${pt}" width="${cw}" height="${ih}" fill="${missing}" opacity=".18"/>`;
+  }});
+  if (avg) s += `<line x1="${pl}" x2="${w-pr}" y1="${y(AVG)}" y2="${y(AVG)}" stroke="${axis}" stroke-width="1.5" stroke-dasharray="5 4"/>` + (labels?`<text x="${pl+6}" y="${y(AVG)-5}" font-size="11" fill="${axis}">5-yr avg ${fmt(AVG)}</text>`:'');
+  const segs=[]; let c=[]; vals.forEach((v,i)=>{ if(v==null){ if(c.length) segs.push(c); c=[]; } else c.push(i); }); if(c.length) segs.push(c);
+  if (type==='bar') vals.forEach((v,i)=>{ if(v!=null) s += `<rect x="${x(i)-cw/2}" y="${y(v)}" width="${cw}" height="${y(0)-y(v)}" rx="2" fill="${i===n-1?line:line}" opacity="${i===n-1?1:.55}"/>`; });
+  else if (type==='dots') vals.forEach((v,i)=>{ if(v!=null) s += `<line x1="${x(i)}" x2="${x(i)}" y1="${y(0)}" y2="${y(v)}" stroke="${line}" opacity=".35" stroke-width="2"/><circle cx="${x(i)}" cy="${y(v)}" r="4.5" fill="${line}"/>`; });
+  else segs.forEach(sg=>{
+    let d = '';
+    if (type==='step') sg.forEach((i,k)=>{ d += k ? `H${x(i)} V${y(vals[i])}` : `M${x(i)} ${y(vals[i])}`; });
+    else d = sg.map((i,k)=>`${k?'L':'M'}${x(i).toFixed(1)} ${y(vals[i]).toFixed(1)}`).join(' ');
+    if (fill && sg.length>1) s += `<path d="${d} L${x(sg[sg.length-1])} ${y(0)} L${x(sg[0])} ${y(0)}Z" fill="${fill}"/>`;
+    if (glow) s += `<path d="${d}" fill="none" stroke="${line}" stroke-width="${width+4}" opacity=".45" filter="url(#g${id})"/>`;
+    s += `<path d="${d}" fill="none" stroke="${line}" stroke-width="${width}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  });
+  if (compare){ const segs2=[];let c2=[]; compare.vals.forEach((v,i)=>{ if(v==null){ if(c2.length) segs2.push(c2); c2=[]; } else c2.push(i); }); if(c2.length) segs2.push(c2);
+    segs2.forEach(sg=>{ s += `<path d="${sg.map((i,k)=>`${k?'L':'M'}${x(i)} ${y(compare.vals[i])}`).join(' ')}" fill="none" stroke="${compare.color}" stroke-width="2" stroke-dasharray="${compare.dash||''}"/>`; }); }
+  if (dot && type!=='bar' && type!=='dots') s += `<circle cx="${x(n-1)}" cy="${y(vals[n-1])}" r="5" fill="${line}" stroke="${bg==='transparent'?'#fff':bg}" stroke-width="2"/>`;
+  return s + '</svg>';
+}
+const flaps = (txt, {bg='#24272c',bg2='#1b1d21',ink='#f2c230',size=56,gap=4,font='Chivo Mono',r=4,border=''}={}) =>
+  `<span style="display:inline-flex;gap:${gap}px;font:600 ${size}px/1 '${font}',monospace;align-items:flex-end">${[...txt].map(ch=>/[0-9A-Z]/.test(ch)
+  ? `<span style="position:relative;display:inline-grid;place-items:center;width:${size*.74}px;height:${size*1.22}px;background:linear-gradient(${bg} 0 50%,${bg2} 50% 100%);color:${ink};border-radius:${r}px;${border}">${ch}<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.35)"></span></span>`
+  : `<span style="color:${ink === '#f2c230' ? '#f2c230' : 'inherit'}">${ch}</span>`).join('')}</span>`;
+
+/* ================= COLLAGE 1: overall look ================= */
+const LOOKS = [
+ ['Bulletin','Plain-English answer first; civic clarity, strong rules, teal', () => `
+  <div style="height:100%;background:#f7f8fa;color:#0d1b2a;font-family:'Atkinson Hyperlegible Next'">
+   <div style="display:flex;align-items:center;gap:8px;padding:14px 22px 14px 70px;border-bottom:3px solid #0d1b2a;background:#fff;font-weight:800"><span style="width:11px;height:11px;border-radius:50%;background:#0b5c6b"></span>isthemarketcooked</div>
+   <div style="padding:18px 26px;display:grid;gap:12px">
+    <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#566476;font-weight:600">Software developers · Manchester</div>
+    <div style="font-size:25px;line-height:1.3;max-width:30ch">There were <b>1,362</b> new online job adverts for software developers in Manchester in April–June 2026. That’s <b>18.6% fewer</b> than a year earlier.</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">${[['A year ago','▼ 18.6% fewer','#a8460c'],['5-year average','▼ 44% below','#a8460c'],['Last quarter','No figure','#566476']].map(c=>`<div style="background:#fff;border:2px solid #d5dbe3;border-radius:6px;padding:10px 12px"><div style="font-size:13px;color:#566476;font-weight:600">${c[0]}</div><div style="font-weight:800;color:${c[2]};font-size:17px">${c[1]}</div></div>`).join('')}</div>
+    <div style="background:#fff;border:2px solid #d5dbe3;border-radius:6px;padding:8px">${chart({w:690,h:170,line:'#0b5c6b',fill:'rgba(11,92,107,.08)',avg:true,font:'Atkinson Hyperlegible Next'})}</div>
+   </div></div>`],
+ ['Ticker','Number-led financial dashboard; monochrome, compact KPI grid', () => `
+  <div style="height:100%;background:#eef1f4;color:#0b1220;font-family:Geist">
+   <div style="display:flex;align-items:center;gap:8px;padding:14px 22px 14px 70px;background:#fff;border-bottom:1px solid #dbe1e8;font-weight:700"><span style="font:500 11px 'Geist Mono';border:1px solid #dbe1e8;padding:2px 5px;border-radius:5px">▲▼</span>isthemarketcooked<span style="margin-left:auto;font:400 13px Geist;border:1px solid #dbe1e8;border-radius:999px;padding:5px 12px;background:#f5f7f9">Software developers · Manchester ✎</span></div>
+   <div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1.25fr;gap:12px">
+    <div style="background:#fff;border:1px solid #dbe1e8;border-radius:12px;padding:16px;display:grid;gap:8px;align-content:start">
+     <div style="font-size:13px;color:#566175">Software developers · Manchester</div>
+     <div style="font:500 54px/1 'Geist Mono';letter-spacing:-.03em">1,362</div>
+     <div style="font-size:14px;color:#3b4659">new online adverts · Q2 2026</div>
+     <div style="display:inline-flex;width:max-content;background:#fbe8db;color:#b04a0a;border-radius:999px;padding:3px 10px;font-weight:700;font-size:14px">▼ Shrinking</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#dbe1e8;border:1px solid #dbe1e8;border-radius:12px;overflow:hidden">${[['vs year ago','▼ −18.6%','#b04a0a','−311 adverts'],['vs 5-yr avg','▼ −44.2%','#b04a0a','avg 2,439'],['vs last qtr','n/a','#566175','Q1 withheld'],['12-mo high','1,673','#0b1220','Q2 2025']].map(k=>`<div style="background:#fff;padding:12px 14px"><div style="font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#566175">${k[0]}</div><div style="font:500 20px 'Geist Mono';color:${k[2]}">${k[1]}</div><div style="font-size:12.5px;color:#3b4659">${k[3]}</div></div>`).join('')}</div>
+    <div style="grid-column:1/-1;background:#fff;border:1px solid #dbe1e8;border-radius:12px;padding:8px">${chart({w:690,h:160,line:'#0b1220',fill:'rgba(11,18,32,.06)',avg:true,font:'Geist Mono',grid:'#eef1f4'})}</div>
+   </div></div>`],
+ ['Board','Station departure board; split-flap answer, dark panel, signal yellow', () => `
+  <div style="height:100%;background:#e3e5e8;color:#15181c;font-family:Chivo">
+   <div style="display:flex;align-items:center;gap:8px;padding:14px 22px 14px 70px;background:#f2f3f5;border-bottom:1px solid #c9cdd3;font:800 15px Chivo;letter-spacing:.04em">ISTHEMARKETCOOKED</div>
+   <div style="padding:16px 22px;display:grid;gap:12px">
+    <div style="font:800 24px Chivo;text-transform:uppercase">Software developers in Manchester</div>
+    <div style="background:#15171a;color:#f4f1e8;border-radius:3px;padding:14px 20px;display:grid">
+     ${[['New online adverts',flaps('1,362',{size:34})+'<span style="color:#a8a49a;font-size:15px;margin-left:12px">APR–JUN 2026</span>'],['vs a year ago','<span style="color:#ffad7a">▼ 18.6% FEWER</span>'],['vs 5-yr average','<span style="color:#ffad7a">▼ 44% BELOW</span>'],['Trend',flaps('SHRINKING',{size:18,gap:2})]].map(r=>`<div style="display:grid;grid-template-columns:190px 1fr;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08)"><span style="font-size:12px;letter-spacing:.14em;color:#a8a49a;text-transform:uppercase;font-weight:600">${r[0]}</span><span style="font:600 19px 'Chivo Mono';display:flex;align-items:center">${r[1]}</span></div>`).join('')}
+    </div>
+    <div style="background:#f2f3f5;border:1px solid #c9cdd3;border-radius:3px;padding:6px">${chart({w:700,h:130,line:'#15181c',fill:'rgba(21,24,28,.06)',font:'Chivo Mono',grid:'#e3e5e8'})}</div>
+   </div></div>`],
+ ['Kitchen','Brand-forward and friendly; heat dial "Not cooked → Cooked", mint enamel + pan orange', () => `
+  <div style="height:100%;background:#eef5f1;color:#17201c;font-family:Figtree">
+   <div style="display:flex;align-items:center;gap:8px;padding:14px 22px 14px 70px;font:800 18px 'Bricolage Grotesque'">is the market <span style="color:#c2410c">cooked?</span></div>
+   <div style="padding:6px 22px;display:grid;gap:12px">
+    <div style="background:#fff;border-radius:22px;padding:18px;display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:center">
+     <svg viewBox="0 0 280 168" width="230"><path d="M30 140 A110 110 0 0 1 72 54" stroke="#1f5fbf" stroke-width="22" fill="none"/><path d="M76 51 A110 110 0 0 1 204 51" stroke="#4b5a53" stroke-width="22" fill="none"/><path d="M208 54 A110 110 0 0 1 250 140" stroke="#b43c0b" stroke-width="22" fill="none"/><g transform="rotate(37 140 140)"><path d="M140 140 L140 44" stroke="#17201c" stroke-width="5" stroke-linecap="round"/></g><circle cx="140" cy="140" r="10" fill="#17201c"/><text x="22" y="164" font-size="14" fill="#3c4a44">Not cooked</text><text x="258" y="164" font-size="14" text-anchor="end" fill="#3c4a44">Cooked</text></svg>
+     <div><div style="font:800 44px/1 'Bricolage Grotesque';letter-spacing:-.02em">Cooked</div><div style="color:#51605a;font-weight:600;margin-top:6px">Shrinking · 18.6% fewer adverts than a year ago</div><div style="font:500 30px 'DM Mono';margin-top:12px">1,362 <span style="font:600 14px Figtree;color:#3c4a44">new adverts, Apr–Jun 2026</span></div></div>
+    </div>
+    <div style="background:#fff;border-radius:22px;padding:10px">${chart({w:680,h:150,line:'#17201c',fill:'rgba(194,65,12,.10)',font:'Figtree',grid:'#e2ede7',avg:true})}</div>
+   </div></div>`],
+ ['Ordnance','Map-inspired; contour lines, survey blue and magenta, grid references', () => `
+  <div style="height:100%;background:#f3f5ee;color:#1d3557;font-family:Overpass;background-image:repeating-radial-gradient(circle at 85% 20%, transparent 0 22px, rgba(196,140,80,.22) 22px 23px);">
+   <div style="display:flex;align-items:center;gap:10px;padding:14px 22px 14px 70px;border-bottom:2px solid #1d3557;font:800 16px Overpass;letter-spacing:.02em;background:#f3f5eecc">isthemarketcooked<span style="margin-left:auto;font:400 12px 'Overpass Mono';color:#4a5d7a">E08000003 · SOC 2134</span></div>
+   <div style="padding:18px 26px;display:grid;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><svg width="22" height="28" viewBox="0 0 22 28"><path d="M11 27C11 27 2 16 2 10a9 9 0 0 1 18 0c0 6-9 17-9 17z" fill="#c2185b"/><circle cx="11" cy="10" r="3.5" fill="#fff"/></svg><span style="font:800 26px Overpass">Software developers · Manchester</span></div>
+    <div style="display:flex;gap:28px;align-items:flex-end"><div><div style="font:600 12px 'Overpass Mono';color:#4a5d7a;letter-spacing:.08em">NEW ONLINE ADVERTS · Q2 2026</div><div style="font:600 58px/1 'Overpass Mono'">1,362</div></div>
+    <div style="border-left:2px solid #1d3557;padding-left:16px;display:grid;gap:4px;font-size:16px"><span><b style="color:#c2185b">▼ 18.6%</b> fewer than a year ago</span><span><b style="color:#c2185b">▼ 44%</b> below the 5-year average</span></div></div>
+    <div style="border:2px solid #1d3557;background:#fffffff0;padding:8px">${chart({w:680,h:170,line:'#1d3557',fill:'rgba(29,53,87,.07)',font:'Overpass Mono',grid:'#dde3ea',avg:true,missing:'#c2185b'})}</div>
+   </div></div>`],
+ ['Forecast','Job market as a weather report; outlook icon, sky gradient, very approachable', () => `
+  <div style="height:100%;background:linear-gradient(#cfe3f6,#f4f8fc 55%);color:#123050;font-family:Rubik">
+   <div style="display:flex;align-items:center;gap:8px;padding:14px 22px 14px 70px;font:700 17px Rubik">isthemarketcooked</div>
+   <div style="padding:6px 26px;display:grid;gap:14px">
+    <div style="display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center">
+     <svg viewBox="0 0 120 100" width="150"><circle cx="40" cy="38" r="20" fill="#f4b53f" opacity=".5"/><path d="M30 70h56a18 18 0 0 0 0-36 26 26 0 0 0-50 6 15 15 0 0 0-6 30z" fill="#8aa0b8"/><path d="M42 80l-5 12M60 80l-5 12M78 80l-5 12" stroke="#3a78c2" stroke-width="5" stroke-linecap="round"/></svg>
+     <div><div style="font-size:15px;color:#3e5a78">Outlook for software developers in Manchester</div><div style="font:700 40px/1.05 Rubik">Showers: shrinking</div><div style="font-size:16px;margin-top:6px;color:#2a4766">1,362 new adverts in Apr–Jun 2026 · 18.6% fewer than last year</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">${Q.slice(-6).map((q,i)=>{const v=MAN.slice(-6)[i];return `<div style="background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 4px 14px -10px #12305080"><div style="font-size:12.5px;color:#3e5a78">${q.replace('Q',' Q')}</div><div style="font:500 20px Rubik;margin-top:4px">${v==null?'–':fmt(v)}</div><div style="font-size:11.5px;color:#6b819a">${v==null?'no data':'adverts'}</div></div>`}).join('')}</div>
+    <div style="background:#fff;border-radius:14px;padding:8px">${chart({w:690,h:120,line:'#3a78c2',fill:'rgba(58,120,194,.12)',font:'Rubik',grid:'#eef3f8'})}</div>
+   </div></div>`],
+ ['Receipt','Thermal-receipt printout; mono, dashed rules, a "bill" for the market', () => `
+  <div style="height:100%;background:#d9d6d0;font-family:'IBM Plex Mono';display:grid;justify-items:center;padding-top:16px">
+   <div style="width:430px;background:#fbfaf7;color:#222;padding:20px 24px;box-shadow:0 10px 24px -14px #000;clip-path:polygon(0 0,100% 0,100% 100%,96% 98.5%,92% 100%,88% 98.5%,84% 100%,80% 98.5%,76% 100%,72% 98.5%,68% 100%,64% 98.5%,60% 100%,56% 98.5%,52% 100%,48% 98.5%,44% 100%,40% 98.5%,36% 100%,32% 98.5%,28% 100%,24% 98.5%,20% 100%,16% 98.5%,12% 100%,8% 98.5%,4% 100%,0 98.5%)">
+    <div style="text-align:center;font-weight:600;font-size:17px">IS THE MARKET COOKED?</div>
+    <div style="text-align:center;font-size:12px;color:#555">ONS RELEASE 25/09/2026 · Q2 2026</div>
+    <div style="border-top:1px dashed #999;margin:10px 0"></div>
+    <div style="font-size:14px">SOFTWARE DEVELOPERS<br>MANCHESTER · SOC 2134</div>
+    <div style="border-top:1px dashed #999;margin:10px 0"></div>
+    ${[['VS LAST YEAR','-18.6%  ▼'],['VS 5-YR AVG','-44.2%  ▼'],['VS LAST QTR','WITHHELD'],['12-MO HIGH','1,673'],['TREND','SHRINKING']].map(r=>`<div style="display:flex;justify-content:space-between;font-size:14px;padding:2px 0"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}
+    <div style="border-top:1px dashed #999;margin:10px 0"></div>
+    <div style="display:flex;justify-content:space-between;font-weight:600;font-size:22px"><span>TOTAL ADVERTS</span><span>1,362</span></div>
+    <div style="margin-top:10px">${chart({w:380,h:80,line:'#222',labels:false,font:'IBM Plex Mono',width:1.6,dot:false})}</div>
+    <div style="height:30px;margin-top:8px;background:repeating-linear-gradient(90deg,#222 0 2px,transparent 2px 4px,#222 4px 5px,transparent 5px 8px,#222 8px 11px,transparent 11px 12px)"></div>
+   </div></div>`],
+ ['Midnight','Calm dark-first dashboard; deep navy, soft glow line, white type', () => `
+  <div style="height:100%;background:#0f1b2d;color:#e8eef7;font-family:Manrope">
+   <div style="display:flex;align-items:center;gap:8px;padding:14px 22px 14px 70px;font:800 16px Manrope;border-bottom:1px solid #22324a">isthemarketcooked</div>
+   <div style="padding:18px 26px;display:grid;gap:14px">
+    <div style="color:#9fb3cf;font-size:15px">Software developers · Manchester · Apr–Jun 2026</div>
+    <div style="display:flex;align-items:flex-end;gap:22px"><div style="font:800 64px/1 Manrope;letter-spacing:-.03em">1,362</div><div style="padding-bottom:8px;display:grid;gap:4px"><span style="color:#ffb08a;font-weight:700">▼ 18.6% fewer than a year ago</span><span style="color:#9fb3cf">new online job adverts</span></div></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">${[['5-year average','▼ 44% below'],['Last quarter','No figure'],['Trend','Shrinking']].map(c=>`<div style="background:#16253b;border:1px solid #22324a;border-radius:14px;padding:12px 14px"><div style="font-size:12.5px;color:#9fb3cf">${c[0]}</div><div style="font-weight:700;font-size:17px">${c[1]}</div></div>`).join('')}</div>
+    <div style="background:#16253b;border:1px solid #22324a;border-radius:14px;padding:8px">${chart({w:680,h:170,line:'#7fb5ff',fill:'rgba(127,181,255,.10)',font:'Manrope',grid:'#22324a',axis:'#7f93b0',glow:true,bg:'#16253b',missing:'#7f93b0',avg:true})}</div>
+   </div></div>`],
+ ['Swiss poster','Big type, strict grid, one red block; bold and graphic', () => `
+  <div style="height:100%;background:#fff;color:#111;font-family:Archivo;display:grid;grid-template-columns:1.1fr 1fr">
+   <div style="padding:70px 24px 20px 26px;display:grid;align-content:space-between;border-right:2px solid #111">
+    <div style="font:800 15px Archivo;letter-spacing:.02em">isthemarketcooked</div>
+    <div><div style="font:600 18px Archivo">Software developers<br>Manchester · Q2 2026</div><div style="font:900 132px/0.9 Archivo;letter-spacing:-.05em;margin-top:10px">1,362</div><div style="font:600 16px Archivo;margin-top:6px">new online job adverts</div></div>
+   </div>
+   <div style="display:grid;grid-template-rows:auto 1fr">
+    <div style="background:#e63312;color:#fff;padding:22px"><div style="font:900 56px/1 Archivo;letter-spacing:-.03em">−18.6%</div><div style="font:600 16px Archivo;margin-top:6px">fewer than a year ago ▼</div></div>
+    <div style="padding:18px 16px 10px"><div style="font:800 34px/1 Archivo">−44%</div><div style="font-size:14px;margin:4px 0 10px">below the 5-year average ▼</div>${chart({w:330,h:170,line:'#111',font:'Archivo',grid:'#eee',missing:'#e63312'})}</div>
+   </div></div>`],
+ ['Pocket app','Soft consumer banking-app feel; rounded cards, lavender, chunky chips', () => `
+  <div style="height:100%;background:#f1effa;color:#1d1a33;font-family:'Plus Jakarta Sans'">
+   <div style="display:flex;align-items:center;gap:8px;padding:14px 22px 14px 70px;font:800 17px 'Plus Jakarta Sans'">isthemarketcooked</div>
+   <div style="padding:4px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="background:#fff;border-radius:26px;padding:18px;display:grid;gap:8px;align-content:start"><div style="display:flex;gap:6px"><span style="background:#ece9fb;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600">Software developers</span><span style="background:#ece9fb;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600">Manchester</span></div><div style="font:800 52px/1 'Plus Jakarta Sans';letter-spacing:-.03em;margin-top:8px">1,362</div><div style="color:#5b5878">new adverts · Apr–Jun 2026</div><div style="display:inline-flex;width:max-content;background:#fde7dc;color:#b0400a;border-radius:999px;padding:6px 14px;font-weight:800">▼ 18.6% vs last year</div></div>
+    <div style="display:grid;gap:12px">${[['5-year average','▼ 44% below','#b0400a'],['Last quarter','No figure (ONS)','#5b5878'],['Trend','▼ Shrinking','#b0400a']].map(c=>`<div style="background:#fff;border-radius:20px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="color:#5b5878;font-size:14px">${c[0]}</span><b style="color:${c[2]}">${c[1]}</b></div>`).join('')}</div>
+    <div style="grid-column:1/-1;background:#fff;border-radius:26px;padding:10px">${chart({w:680,h:150,line:'#5b4bdb',fill:'rgba(91,75,219,.10)',font:'Plus Jakarta Sans',grid:'#f1effa',avg:true})}</div>
+   </div></div>`]
+];
+
+/* ================= COLLAGE 2: typography ================= */
+const TYPE = [
+ ['Atkinson Hyperlegible','Designed for low-vision readers; very clear 1/l/I and 0/O', 'Atkinson Hyperlegible Next','Atkinson Hyperlegible Next','Atkinson Hyperlegible Mono'],
+ ['Geist','Crisp modern sans + mono; finance and tech feel','Geist','Geist','Geist Mono'],
+ ['Chivo','Sturdy signage grotesque + mono; works with split-flap','Chivo','Chivo','Chivo Mono'],
+ ['Bricolage + Figtree','Characterful display, friendly body, DM Mono numbers','Bricolage Grotesque','Figtree','DM Mono'],
+ ['Public Sans + Plex Mono','Neutral civic sans, engineered mono numbers','Public Sans','Public Sans','IBM Plex Mono'],
+ ['Source Serif + Sans','Editorial and trustworthy; serif headlines, sans body','Source Serif 4','Source Sans 3','Source Sans 3'],
+ ['Archivo + JetBrains','Bold poster sans, technical mono figures','Archivo','Archivo','JetBrains Mono'],
+ ['Lexend','Built for reading ease; wide and open, one family throughout','Lexend','Lexend','Lexend']
+];
+const typeTile = ([name,desc,d,b,n]) => `
+ <div style="padding:70px 26px 22px;background:#fff;color:#111;height:100%;display:grid;gap:12px;align-content:start">
+  <div style="font:${d==='Lexend'?600:800} 30px/1.08 '${d}';letter-spacing:-.015em">Software developers in Manchester</div>
+  <div style="font:400 15px/1.5 '${b}';color:#444">Programmers and software development professionals · SOC 2134</div>
+  <div style="display:flex;align-items:flex-end;gap:12px"><span style="font:600 62px/1 '${n}';font-variant-numeric:tabular-nums;letter-spacing:-.02em">1,362</span><span style="font:400 15px/1.3 '${b}';color:#444;padding-bottom:6px">new online job adverts<br>April–June 2026</span></div>
+  <div style="font:400 18px/1.45 '${b}'">That’s <b style="font-weight:700">18.6% fewer</b> than a year earlier, and 44% below the 5-year average.</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid #ddd;padding-top:10px">${[['Year ago','▼ 18.6%'],['5-yr avg','▼ 44%'],['Trend','Shrinking']].map(s=>`<div><div style="font:600 12px '${b}';text-transform:uppercase;letter-spacing:.07em;color:#666">${s[0]}</div><div style="font:600 19px '${n}';color:#a8460c">${s[1]}</div></div>`).join('')}</div>
+  <div style="font:400 14px '${n}';color:#333;display:grid;gap:3px;border-top:1px solid #ddd;padding-top:10px">${CITIES.slice(0,4).map(c=>`<div style="display:flex;justify-content:space-between"><span style="font-family:'${b}'">${c[0]}</span><span>${fmt(c[1])}</span></div>`).join('')}</div>
+  <div style="font:400 13px '${b}';color:#777">0O 1lI · 0123456789 · £ % ▲▼</div>
+ </div>`;
+
+/* ================= COLLAGE 3: result page layout (phone) ================= */
+const P = {bg:'#f6f7f9',s:'#fff',ink:'#111827',ink2:'#4b5563',rule:'#e3e6ea',down:'#b04a0a',downbg:'#fbe8db',up:'#1559c9',acc:'#0b5c6b'};
+const phone = inner => `<div style="height:100%;background:${P.bg};font-family:'Atkinson Hyperlegible Next';color:${P.ink};padding:64px 16px 16px;display:grid;gap:12px;align-content:start;font-size:14px">${inner}</div>`;
+const pTitle = `<div style="font:800 21px/1.15 'Atkinson Hyperlegible Next'">Software developers in Manchester</div><div style="font-size:12.5px;color:${P.ink2};margin-top:-6px">SOC 2134 · quarterly · Apr–Jun 2026</div>`;
+const card = (inner,extra='') => `<div style="background:${P.s};border:1px solid ${P.rule};border-radius:12px;padding:12px;${extra}">${inner}</div>`;
+const downChip = t => `<span style="display:inline-flex;background:${P.downbg};color:${P.down};border-radius:999px;padding:3px 10px;font-weight:700;font-size:13px">${t}</span>`;
+const LAYOUTS = [
+ ['Sentence first','The answer in words, then the number, then details', () => phone(`${pTitle}
+   <div style="font-size:19px;line-height:1.35">There were <b>1,362</b> new online adverts in Apr–Jun 2026. That’s <b style="color:${P.down}">18.6% fewer</b> than a year earlier.</div>
+   ${card(`<div style="display:grid;gap:8px">${[['A year ago','▼ 18.6% fewer'],['5-year average','▼ 44% below'],['Last quarter','No figure']].map(r=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid ${P.rule};padding-bottom:6px"><span style="color:${P.ink2}">${r[0]}</span><b style="color:${r[1][0]==='▼'?P.down:P.ink2}">${r[1]}</b></div>`).join('')}</div>`)}
+   ${card(chart({w:290,h:150,line:P.acc,fill:'rgba(11,92,107,.08)',labels:false,avg:true}))}
+   ${card(`<b>Other places</b>${CITIES.slice(0,3).map(c=>`<div style="display:flex;justify-content:space-between;margin-top:6px"><span>${c[0]}</span><span class="num">${fmt(c[1])}</span></div>`).join('')}`)}`)],
+ ['Number hero','Huge number up top, three stat cards, then chart', () => phone(`${pTitle}
+   <div style="text-align:center;padding:10px 0"><div style="font:600 76px/1 'Atkinson Hyperlegible Mono';letter-spacing:-.03em">1,362</div><div style="color:${P.ink2}">new online job adverts</div><div style="margin-top:8px">${downChip('▼ 18.6% vs last year')}</div></div>
+   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">${[['5-yr avg','▼ 44%'],['Last qtr','–'],['Trend','▼']].map(c=>card(`<div style="font-size:11px;color:${P.ink2}">${c[0]}</div><b style="color:${P.down}">${c[1]}</b>`,'padding:8px;text-align:center')).join('')}</div>
+   ${card(chart({w:290,h:170,line:P.ink,fill:'rgba(0,0,0,.05)',labels:false,avg:true}))}`)],
+ ['Dashboard grid','KPI tiles in a 2×3 grid; dense, scan-able', () => phone(`${pTitle}
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:${P.rule};border:1px solid ${P.rule};border-radius:12px;overflow:hidden">${[['Latest','1,362','#111'],['vs year ago','−18.6%',P.down],['vs 5-yr avg','−44.2%',P.down],['vs last qtr','n/a',P.ink2],['12-mo high','1,673','#111'],['12-mo low','1,362','#111']].map(k=>`<div style="background:#fff;padding:10px 12px"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:${P.ink2}">${k[0]}</div><div style="font:600 20px 'Atkinson Hyperlegible Mono';color:${k[2]}">${k[1]}</div></div>`).join('')}</div>
+   ${card(chart({w:290,h:160,line:P.ink,labels:false}))}
+   ${card(`<b>Trend</b> ${downChip('▼ Shrinking')}`)}`)],
+ ['Board rows','Label / value rows like a departure board', () => phone(`${pTitle}
+   <div style="background:#15171a;color:#f4f1e8;border-radius:6px;padding:8px 14px">${[['Adverts',flaps('1,362',{size:22,gap:2})],['Year ago','<span style="color:#ffad7a">▼ 18.6% FEWER</span>'],['5-yr avg','<span style="color:#ffad7a">▼ 44% BELOW</span>'],['Last qtr','<span style="color:#a8a49a">NO FIGURE</span>'],['Trend',flaps('SHRINKING',{size:12,gap:1})]].map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)"><span style="font-size:11px;letter-spacing:.12em;color:#a8a49a;text-transform:uppercase">${r[0]}</span><span style="font:600 14px 'Chivo Mono'">${r[1]}</span></div>`).join('')}</div>
+   ${card(chart({w:290,h:150,line:P.ink,labels:false}))}`)],
+ ['Verdict + gauge','A dial or meter gives the gist; figures underneath', () => phone(`${pTitle}
+   ${card(`<svg viewBox="0 0 280 160" width="270" style="margin:auto"><path d="M30 140 A110 110 0 0 1 72 54" stroke="${P.up}" stroke-width="20" fill="none"/><path d="M76 51 A110 110 0 0 1 204 51" stroke="#9aa3ad" stroke-width="20" fill="none"/><path d="M208 54 A110 110 0 0 1 250 140" stroke="${P.down}" stroke-width="20" fill="none"/><g transform="rotate(37 140 140)"><path d="M140 140 L140 48" stroke="#111" stroke-width="5" stroke-linecap="round"/></g><circle cx="140" cy="140" r="9" fill="#111"/></svg><div style="text-align:center;font:800 26px 'Atkinson Hyperlegible Next'">Shrinking</div><div style="text-align:center;color:${P.ink2}">18.6% fewer adverts than a year ago</div>`)}
+   <div style="display:flex;justify-content:space-between">${card(`<div style="font-size:11px;color:${P.ink2}">Latest</div><b style="font-size:20px">1,362</b>`,'flex:1;margin-right:6px')}${card(`<div style="font-size:11px;color:${P.ink2}">vs 5-yr avg</div><b style="font-size:20px;color:${P.down}">▼ 44%</b>`,'flex:1')}</div>
+   ${card(chart({w:290,h:120,line:P.ink,labels:false}))}`)],
+ ['Chart first','Large annotated chart is the hero; number sits on it', () => phone(`${pTitle}
+   ${card(`<div style="position:relative">${chart({w:290,h:300,line:P.acc,fill:'rgba(11,92,107,.10)',labels:false,avg:true})}<div style="position:absolute;right:8px;top:6px;text-align:right"><div style="font:600 34px/1 'Atkinson Hyperlegible Mono'">1,362</div><div style="font-size:12px;color:${P.ink2}">Apr–Jun 2026</div>${downChip('▼ 18.6% yoy')}</div><div style="position:absolute;left:10px;top:215px;font-size:12px;color:${P.ink2};max-width:120px">2022 peak: about 4,200 a quarter</div></div>`)}
+   <div style="font-size:15px">Adverts are <b>44% below</b> the 5-year average.</div>`)],
+ ['Four questions','Step-by-step cards: How many? vs last year? vs normal? Which way?', () => phone(`${pTitle}
+   ${[['1','How many?','<b style="font-size:22px">1,362</b> new online adverts, Apr–Jun 2026'],['2','Compared with a year ago?',`<b style="color:${P.down}">▼ 18.6% fewer</b> (1,673 in Apr–Jun 2025)`],['3','Compared with normal?',`<b style="color:${P.down}">▼ 44% below</b> the 5-year average of 2,439`],['4','Which way is it heading?',chart({w:260,h:80,line:P.acc,labels:false,dot:true})]].map(q=>card(`<div style="display:grid;grid-template-columns:26px 1fr;gap:8px"><span style="width:24px;height:24px;border-radius:50%;background:${P.ink};color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px">${q[0]}</span><div><div style="font-weight:800;margin-bottom:4px">${q[1]}</div><div>${q[2]}</div></div></div>`)).join('')}`)]
+];
+
+/* ================= COLLAGE 4: colour for change ================= */
+const COLOURS = [
+ ['Blue / orange','Colour-blind safe; calm, no alarm red',{up:'#1559c9',upbg:'#e1ebfb',down:'#b04a0a',downbg:'#fbe8db',acc:'#0b5c6b'},{up:'#8ab8ff',upbg:'#16294a',down:'#ffad7a',downbg:'#3d2213',acc:'#5cc2cf'}],
+ ['Green / red','Classic finance; hardest for red–green colour blindness',{up:'#167a3e',upbg:'#ddf2e5',down:'#c0262d',downbg:'#fbe0e1',acc:'#111827'},{up:'#6fdc98',upbg:'#11301d',down:'#ff8a8f',downbg:'#3d1516',acc:'#e5e7eb'}],
+ ['Teal / magenta','Distinctive and modern; colour-blind friendly',{up:'#0f766e',upbg:'#d8f1ee',down:'#b0246b',downbg:'#f8dfec',acc:'#0f172a'},{up:'#5ed6c9',upbg:'#0f2f2c',down:'#f58ac0',downbg:'#3a1328',acc:'#e2e8f0'}],
+ ['Monochrome','No change colours; arrows, weight and words do the work',{up:'#111',upbg:'#ececec',down:'#111',downbg:'#ececec',acc:'#111'},{up:'#f2f2f2',upbg:'#262626',down:'#f2f2f2',downbg:'#262626',acc:'#f2f2f2'}],
+ ['Blue / amber','Soft and optimistic; amber reads as "caution", not "bad"',{up:'#1d4ed8',upbg:'#e0e8fc',down:'#a15c00',downbg:'#fbecd0',acc:'#1e293b'},{up:'#93b4ff',upbg:'#17255a',down:'#f6bf5c',downbg:'#3b2a0b',acc:'#cbd5e1'}],
+ ['Purple / gold','Unusual, brand-like; strong contrast both themes',{up:'#5b3cc4',upbg:'#ebe5fb',down:'#946200',downbg:'#f8edcc',acc:'#2b2050'},{up:'#b9a3ff',upbg:'#271b52',down:'#f0c45a',downbg:'#3a2c08',acc:'#d8d0f5'}],
+ ['Green / orange','Friendly; green for growth without a red alarm',{up:'#17793d',upbg:'#dcf1e3',down:'#b8480b',downbg:'#fce5d6',acc:'#17201c'},{up:'#74d99a',upbg:'#10301d',down:'#ff9f66',downbg:'#3d1f0d',acc:'#e8f1ec'}],
+ ['Single accent','One brand hue; up is solid, down is outlined',{up:'#c2410c',upbg:'#fde5d8',down:'#c2410c',downbg:'transparent',acc:'#c2410c'},{up:'#ff8a4c',upbg:'#3d1f10',down:'#ff8a4c',downbg:'transparent',acc:'#ff8a4c'}]
+];
+const colourHalf = (c, dark) => {
+  const bg = dark ? '#11151b' : '#fff', ink = dark ? '#e8ebef' : '#111', ink2 = dark ? '#a3acb9' : '#555';
+  const chip = (t,col,b) => `<span style="display:inline-flex;align-items:center;gap:5px;background:${b};color:${col};border:${b==='transparent'?`1.5px solid ${col}`:'0'};border-radius:999px;padding:4px 11px;font:700 14px 'Public Sans'">${t}</span>`;
+  return `<div style="background:${bg};color:${ink};padding:66px 16px 14px;display:grid;gap:10px;align-content:start">
+    <div style="font-size:12px;color:${ink2};text-transform:uppercase;letter-spacing:.08em">${dark?'Dark':'Light'}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${chip('▲ 12% more',c.up,c.upbg)}${chip('▼ 18.6% fewer',c.down,c.downbg)}</div>
+    <div style="font:700 15px 'Public Sans'"><span style="color:${c.up}">▲ Growing</span> · <span style="color:${c.down}">▼ Shrinking</span></div>
+    ${chart({w:170,h:70,line:c.acc,labels:false,missing:ink2,bg:bg,dot:false,width:2})}
+    <span style="display:inline-flex;width:max-content;background:${c.acc};color:${bg};padding:7px 14px;border-radius:8px;font:700 13px 'Public Sans'">Check the market</span>
+  </div>`;
+};
+
+/* ================= COLLAGE 5: chart style ================= */
+const CH = {line:'#0b5c6b',fill:'rgba(11,92,107,.10)',font:'Public Sans'};
+const CHARTS = [
+ ['Line + area','Line with soft fill, dashed 5-year average', () => chart({...CH,w:470,h:250,avg:true})],
+ ['Bars','One bar per quarter; latest highlighted', () => chart({...CH,w:470,h:250,type:'bar'})],
+ ['Line + range band','Shaded band shows the normal range; line is today', () => chart({...CH,w:470,h:250,band:true,fill:null})],
+ ['Step line','Each quarter is a flat step, so it’s clear it’s a total for the period', () => chart({...CH,w:470,h:250,type:'step',fill:'rgba(11,92,107,.08)'})],
+ ['Lollipops','Dots on stalks; easy to read single values', () => chart({...CH,w:470,h:250,type:'dots'})],
+ ['Compared with UK','Manchester and UK both indexed to 100, so you see if it’s local or national', () => {
+    const base=MAN[0], ub=UK[0];
+    const mi=MAN.map(v=>v==null?null:Math.round(v/base*AVG)), ui=UK.map(v=>v==null?null:Math.round(v/ub*AVG));
+    return chart({...CH,w:470,h:230,vals:mi,compare:{vals:ui,color:'#b04a0a',dash:'6 4'},labels:false,fill:null}) + `<div style="display:flex;gap:16px;font-size:13px;padding:0 10px"><span><b style="color:#0b5c6b">—</b> Manchester</span><span><b style="color:#b04a0a">- -</b> UK</span><span style="color:#666">Both start at the same level in 2021</span></div>`; }]
+];
+
+/* ================= COLLAGE 6: missing data ================= */
+const GAPS = [
+ ['Hatched gap','Break in the line plus a striped column', 'hatch'],
+ ['Labelled gap','Break in the line with the words “no data” in the gap','label'],
+ ['Cross marker','Break in the line plus an × on the axis, explained in the legend','cross'],
+ ['Shaded + callout','Grey band with a short note saying why ONS withheld it','band']
+];
+
+/* ================= COLLAGE 7: headline number ================= */
+const NUMS = [
+ ['Dark split-flap','Each digit flips into place on dark tiles', () => flaps('1,362',{size:66,bg:'#1d2430',bg2:'#151b24',ink:'#fff'})],
+ ['Yellow board flaps','Departure-board tiles with signal-yellow digits', () => flaps('1,362',{size:66})],
+ ['Light outlined tiles','Split-flap on light tiles with a thin outline', () => flaps('1,362',{size:66,bg:'#fff',bg2:'#f1f2f4',ink:'#111',border:'border:1.5px solid #c9ced6'})],
+ ['Plain + ink-in','No tiles; huge number fades in from a soft blur', () => `<span style="font:600 92px/1 'Atkinson Hyperlegible Mono';letter-spacing:-.03em;text-shadow:0 0 8px rgba(0,0,0,.18)">1,362</span><div style="font-size:13px;color:#666;margin-top:6px">(shown mid-animation)</div>`],
+ ['Odometer roll','Digits roll up like a counter', () => `<span style="display:inline-flex;font:600 72px/1 'Geist Mono'">${['1',',','3','6','2'].map(d=>d===','?'<span>,</span>':`<span style="display:inline-grid;height:82px;overflow:hidden;align-content:center;-webkit-mask:linear-gradient(transparent,#000 22%,#000 78%,transparent)"><span style="opacity:.25;font-size:.6em;text-align:center">${(+d+9)%10}</span><span>${d}</span><span style="opacity:.25;font-size:.6em;text-align:center">${(+d+1)%10}</span></span>`).join('')}</span>`],
+ ['Number + inline trend','Number with its change and a sparkline attached', () => `<div style="display:flex;align-items:center;gap:18px"><span style="font:600 76px/1 'Geist Mono';letter-spacing:-.03em">1,362</span><div style="display:grid;gap:6px"><span style="background:#fbe8db;color:#b04a0a;border-radius:999px;padding:4px 12px;font:700 15px 'Public Sans'">▼ 18.6%</span>${chart({w:150,h:50,line:'#111',labels:false,width:2})}</div></div>`]
+];
+
+/* ================= page builder ================= */
+const COLLAGES = {
+  1:{title:'Collage 1 · Overall look', sub:'The whole feel of the site. Same real data in each: software developers in Manchester, Apr–Jun 2026.', cols:2, w:760, h:500, items:LOOKS.map(([n,d,f])=>[n,d,f()])},
+  2:{title:'Collage 2 · Typography', sub:'Font pairings for headings, body text and numbers. Look at the digits and the small text.', cols:4, w:364, h:560, items:TYPE.map(t=>[t[0],t[1],typeTile(t)])},
+  3:{title:'Collage 3 · Result page layout (phone)', sub:'How the answer is arranged on a phone. Styling kept neutral so you judge the structure only.', cols:4, w:364, h:720, items:LAYOUTS.map(([n,d,f])=>[n,d,f()])},
+  4:{title:'Collage 4 · Colours for up and down', sub:'Every change also gets an arrow and a word, so colour is never the only signal. Light and dark shown together.', cols:4, w:364, h:350, items:COLOURS.map(([n,d,l,dk])=>[n,d,`<div style="display:grid;grid-template-columns:1fr 1fr;height:100%">${colourHalf(l,false)}${colourHalf(dk,true)}</div>`])},
+  5:{title:'Collage 5 · Chart style', sub:'Real quarterly figures, 2021–2026. The gap is Jan–Mar 2026, which ONS withheld.', cols:3, w:492, h:330, items:CHARTS.map(([n,d,f])=>[n,d,`<div style="padding:62px 10px 10px">${f()}</div>`])},
+  6:{title:'Collage 6 · Showing missing data', sub:'ONS withheld Jan–Mar 2026. The chart must never show it as zero. Which way explains it best?', cols:2, w:760, h:330, items:GAPS.map(([n,d,g])=>[n,d,`<div style="padding:60px 16px 12px;position:relative">${chart({...CH,w:720,h:250,vals:MAN.slice(-12),gap:g,missing:'#8a94a3'}).replace(/<text[^>]*>(20\d\d)<\/text>/g,'')}${g==='band'?`<div style="position:absolute;right:120px;top:66px;background:#111;color:#fff;font-size:13px;padding:6px 10px;border-radius:6px;max-width:220px">Jan–Mar 2026: ONS withheld all figures after a data-supply problem</div>`:''}${g==='cross'?`<div style="font-size:13px;color:#555;padding-left:44px">× = no figure published by ONS</div>`:''}</div>`])},
+  7:{title:'Collage 7 · Headline number style', sub:'The big number at the top of every result. Animations are shown as their final frame; captions describe the motion.', cols:3, w:492, h:240, items:NUMS.map(([n,d,f])=>[n,d,`<div style="height:100%;display:grid;place-items:center;padding-top:30px;background:#fafafa">${f()}</div>`])}
+};
+const c = COLLAGES[new URLSearchParams(location.search).get('c') || 1];
+const L = 'abcdefghijklmnopqrstuvwxyz';
+document.getElementById('page').innerHTML = `
+  <div class="top"><div><h1>${c.title}</h1><p>${c.sub}</p></div><div class="ask">Pick one letter</div></div>
+  <div class="grid" style="grid-template-columns:repeat(${c.cols},${c.w}px)">
+   ${c.items.map(([n,d,html],i)=>`<div class="item"><div class="frame" style="width:${c.w}px;height:${c.h}px"><div class="badge">${L[i].toUpperCase()}</div>${html}</div><div class="cap"><b>${L[i].toUpperCase()} · ${n}</b><span>${d}</span></div></div>`).join('')}
+  </div>`;
+document.title = c.title;
+</script>
+</body>
+</html>

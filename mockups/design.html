@@ -1,0 +1,451 @@
+<title>Is the Market Cooked? Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap">
+<style>
+/* Layout: Ticker look (light-first), Lexend, number-hero result page.
+   Hero box (number + change + drawing sparkline) → three cards → main chart → other places. */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --surface-2:#f5f7f9; --ink:#0b1220; --ink-2:#3b4659; --ink-3:#566175; --rule:#dbe1e8;
+  --line:#0b1220; --fill:rgba(11,18,32,.06); --accent:#0b1220; --accent-ink:#ffffff;
+  --up:#167a3e; --up-bg:#ddf2e5; --down:#c0262d; --down-bg:#fbe0e1; --flat:#4b5563; --flat-bg:#eceff3;
+  --missing:#8a94a3; --callout:#0b1220; --callout-ink:#ffffff; --focus:#1559c9;
+  --font:"Lexend",system-ui,sans-serif;
+  --r:12px; --r-sm:8px; --ease:cubic-bezier(.2,.7,.2,1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0a0d12; --surface:#11161d; --surface-2:#171d26; --ink:#e9edf3; --ink-2:#b9c2cf; --ink-3:#8f9aab; --rule:#252d39;
+  --line:#e9edf3; --fill:rgba(233,237,243,.07); --accent:#e9edf3; --accent-ink:#0a0d12;
+  --up:#6fdc98; --up-bg:#11301d; --down:#ff8a8f; --down-bg:#3d1516; --flat:#a3adbb; --flat-bg:#1d2430;
+  --missing:#667181; --callout:#e9edf3; --callout-ink:#0a0d12; --focus:#7fb0ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0d12; --surface:#11161d; --surface-2:#171d26; --ink:#e9edf3; --ink-2:#b9c2cf; --ink-3:#8f9aab; --rule:#252d39;
+  --line:#e9edf3; --fill:rgba(233,237,243,.07); --accent:#e9edf3; --accent-ink:#0a0d12;
+  --up:#6fdc98; --up-bg:#11301d; --down:#ff8a8f; --down-bg:#3d1516; --flat:#a3adbb; --flat-bg:#1d2430;
+  --missing:#667181; --callout:#e9edf3; --callout-ink:#0a0d12; --focus:#7fb0ff; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font:300 16px/1.5 var(--font);font-feature-settings:"tnum"}
+.num{font-variant-numeric:tabular-nums}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px}
+@media (min-width:720px){.wrap{padding-inline:32px}}
+
+/* mockup bar (not part of the design) */
+.mbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--surface-2);border-bottom:1px dashed var(--rule)}
+.mbar .in{display:flex;gap:12px;align-items:center;overflow-x:auto;padding:6px 16px;font:400 12.5px var(--font);color:var(--ink-3)}
+.mbar b{font-weight:600;color:var(--ink-2);white-space:nowrap}
+.seg{display:flex;border:1px solid var(--rule);border-radius:999px;padding:2px;flex:none}
+.seg button{all:unset;cursor:pointer;padding:3px 10px;border-radius:999px;white-space:nowrap;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button:focus-visible{outline:2px solid var(--focus)}
+
+/* header */
+.hdr{background:var(--surface);border-bottom:1px solid var(--rule)}
+.hdr .wrap{display:flex;align-items:center;gap:12px;min-height:60px;flex-wrap:wrap;padding-block:8px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:17px;text-decoration:none;letter-spacing:-.01em}
+.logo .mk{font-size:11px;border:1px solid var(--rule);border-radius:6px;padding:2px 6px;color:var(--ink-2)}
+.logo i{font-style:normal;color:var(--ink-3);font-weight:400}
+.pillbtn{margin-left:auto;display:flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid var(--rule);border-radius:999px;background:var(--surface-2);color:var(--ink);font:400 14px var(--font);cursor:pointer;max-width:100%}
+.pillbtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* shared bits */
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r)}
+.chip{display:inline-flex;align-items:center;gap:6px;width:max-content;border-radius:999px;padding:4px 12px;font-weight:500;font-size:15px}
+.chip.up{background:var(--up-bg);color:var(--up)} .chip.down{background:var(--down-bg);color:var(--down)} .chip.flat,.chip.na{background:var(--flat-bg);color:var(--flat)}
+.muted{color:var(--ink-3)}
+.lbl{font-size:13px;color:var(--ink-3);font-weight:400}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* entrance: ink-in */
+.still .ink{animation:none}
+.ink{animation:ink .6s var(--ease) both;animation-delay:calc(var(--i,0) * 80ms)}
+@keyframes ink{from{opacity:0;filter:blur(3px);transform:translateY(3px)}}
+
+/* ---------- home ---------- */
+.hero{padding-block:56px 40px}
+@media (min-width:720px){.hero{padding-block:96px 64px}}
+.hero h1{font-size:clamp(40px,7.4vw,68px);line-height:1.02;letter-spacing:-.035em;font-weight:600}
+.hero .lede{font-size:clamp(17px,2.2vw,20px);color:var(--ink-2);margin-top:14px;max-width:40ch}
+.sform{display:grid;gap:12px;margin-top:30px;max-width:780px}
+@media (min-width:720px){.sform{grid-template-columns:1fr 1fr auto;align-items:end}}
+.field{display:grid;gap:6px;position:relative;min-width:0}
+.field label{font-weight:500;font-size:15px}
+.field input{width:100%;min-height:54px;padding:0 16px;border:1px solid var(--rule);border-radius:var(--r);background:var(--surface);color:var(--ink);font:400 17px var(--font)}
+.field input:focus{border-color:var(--ink);outline:none;box-shadow:0 0 0 3px var(--flat-bg)}
+.btn{min-height:54px;padding:0 24px;border:0;border-radius:var(--r);background:var(--accent);color:var(--accent-ink);font:500 16px var(--font);cursor:pointer}
+.sugg{position:absolute;top:100%;left:0;right:0;z-index:20;margin:4px 0 0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);box-shadow:0 14px 30px -14px rgba(0,0,0,.35);max-height:300px;overflow:auto}
+.sugg li{padding:10px 12px;border-radius:var(--r-sm);cursor:pointer;font-size:15px}
+.sugg li[aria-selected="true"],.sugg li:hover{background:var(--surface-2)}
+.sugg li small{display:block;color:var(--ink-3);font-size:12.5px}
+.toast{margin-top:12px;font-size:14.5px;color:var(--ink-2);min-height:1.5em}
+.try{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px}
+.try span{font-size:14px;color:var(--ink-3)}
+.try button{min-height:38px;padding:0 14px;border:1px solid var(--rule);border-radius:999px;background:var(--surface);color:var(--ink);font:400 14px var(--font);cursor:pointer}
+.uk{display:grid;gap:16px;padding-block:8px 56px}
+@media (min-width:860px){.uk{grid-template-columns:1.2fr 1fr 1fr}}
+.uk .card{padding:20px}
+.uk .big{font-size:40px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin:6px 0 4px}
+.uk h3{font-size:16px;margin-bottom:8px}
+.uk ol{list-style:none;margin:0;padding:0}
+.uk li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--rule);font-size:15px}
+.uk li:last-child{border-bottom:0}
+.uk li span:first-child{min-width:0}
+
+/* ---------- result ---------- */
+.rhead{padding-block:28px 16px}
+.rhead h1{font-size:clamp(26px,4vw,38px);line-height:1.1;letter-spacing:-.025em}
+.rhead .sub{margin-top:6px;color:var(--ink-3);font-size:14.5px}
+.banner{margin-top:14px;padding:12px 14px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--rule);font-size:14.5px;color:var(--ink-2);max-width:72ch}
+.herobox{display:grid;gap:18px;padding:22px}
+@media (min-width:760px){.herobox{grid-template-columns:minmax(0,1fr) minmax(0,300px);align-items:center;padding:28px 32px}}
+.bignum{font-size:clamp(64px,13vw,104px);font-weight:500;letter-spacing:-.045em;line-height:.95}
+.unit{font-size:15.5px;color:var(--ink-2);margin-top:8px}
+.herobox .chip{margin-top:14px;font-size:16px;padding:6px 14px}
+.spark{display:grid;gap:6px}
+.spark svg{width:100%;height:auto;overflow:visible}
+.spark .cap{font-size:12.5px;color:var(--ink-3);display:flex;justify-content:space-between}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.cards .card{padding:14px 16px;display:grid;gap:4px;align-content:start;min-width:0}
+.cards .val{font-size:19px;font-weight:500}
+.cards .val.up{color:var(--up)} .cards .val.down{color:var(--down)} .cards .val.na{color:var(--ink-3)}
+.cards .sub{font-size:13px;color:var(--ink-3)}
+@media (max-width:560px){.cards{gap:6px}.cards .card{padding:10px;text-align:center}.cards .val{font-size:16px}.cards .sub{display:none}}
+.tip{border:0;background:none;color:var(--ink-3);text-decoration:underline dotted;text-underline-offset:3px;cursor:help;font:400 13px var(--font);padding:0;justify-self:start}
+@media (max-width:560px){.tip{justify-self:center}}
+.rulebox{font-size:14px;color:var(--ink-2);margin-top:10px;padding:12px 14px;border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--rule);max-width:70ch}
+.sec{margin-top:28px}
+.sechead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sechead h2{font-size:19px}
+.tabs{display:flex;gap:4px;border:1px solid var(--rule);border-radius:999px;padding:3px;background:var(--surface)}
+.tabs button{min-height:34px;min-width:44px;padding:0 10px;border:0;border-radius:999px;background:none;color:var(--ink-2);font:400 14px var(--font);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chartcard{position:relative;padding:14px 8px 8px}
+.chartcard svg{display:block;width:100%;height:auto;touch-action:pan-y}
+.callout{position:absolute;max-width:220px;background:var(--callout);color:var(--callout-ink);font-size:12.5px;line-height:1.35;padding:8px 10px;border-radius:var(--r-sm);pointer-events:none}
+.ctip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:6px;font-size:13px;white-space:nowrap;transform:translate(-50%,-115%)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-3);padding:8px 12px 4px}
+.legend i{display:inline-block;width:18px;height:12px;vertical-align:-1px;margin-right:6px;border-radius:2px}
+.lg-gap{background:repeating-linear-gradient(45deg,var(--missing) 0 2px,transparent 2px 5px)}
+.lg-avg{border-top:2px dashed var(--ink-3);height:0!important;vertical-align:4px!important}
+.linkbtn{border:0;background:none;color:var(--ink-2);text-decoration:underline;cursor:pointer;font:400 14px var(--font);padding:8px 0}
+.tablewrap{overflow-x:auto}
+.dtable{border-collapse:collapse;font-size:14.5px;min-width:300px}
+.dtable th,.dtable td{padding:6px 16px 6px 0;border-bottom:1px solid var(--rule);text-align:left;font-weight:400}
+.dtable th{color:var(--ink-3);font-size:13px}
+.dtable td.n{text-align:right}
+.places{list-style:none;margin:0;padding:4px 16px}
+.places li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--rule);font-size:15px}
+.places li:last-child{border-bottom:0}
+.places li.me{font-weight:500}
+.places .chg{font-size:13.5px;font-weight:500}
+.places .chg.up{color:var(--up)} .places .chg.down{color:var(--down)} .places .chg.na{color:var(--ink-3);font-weight:400}
+.signal{display:grid;gap:12px;padding:18px}
+@media (min-width:720px){.signal{grid-template-columns:1.3fr 1fr 1fr;align-items:center}}
+.signal .v{font-size:26px;font-weight:500}
+details.about{margin-top:28px;padding:4px 18px}
+details.about summary{cursor:pointer;padding:12px 0;font-weight:500}
+details.about dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 24px;margin:4px 0 12px;font-size:14.5px}
+details.about dt{font-size:12.5px;color:var(--ink-3)}
+details.about dd{margin:2px 0 0}
+details.about ul{margin:0 0 14px;padding-left:20px;font-size:14.5px;color:var(--ink-2);display:grid;gap:4px}
+.foot{padding-block:28px 48px;font-size:13px;color:var(--ink-3)}
+.foot p+p{margin-top:6px}
+
+@media (prefers-reduced-motion: reduce){.ink{animation:none}}
+</style>
+
+<div class="mbar" role="region" aria-label="Mockup controls"><div class="in">
+  <b>Mockup · real ONS data</b>
+  <div class="seg" id="m-page"></div><div class="seg" id="m-scen"></div><div class="seg" id="m-theme"></div>
+</div></div>
+<div id="app"></div>
+
+<script>
+const D = {"months":["Jan-17","Feb-17","Mar-17","Apr-17","May-17","Jun-17","Jul-17","Aug-17","Sep-17","Oct-17","Nov-17","Dec-17","Jan-18","Feb-18","Mar-18","Apr-18","May-18","Jun-18","Jul-18","Aug-18","Sep-18","Oct-18","Nov-18","Dec-18","Jan-19","Feb-19","Mar-19","Apr-19","May-19","Jun-19","Jul-19","Aug-19","Sep-19","Oct-19","Nov-19","Dec-19","Jan-20","Feb-20","Mar-20","Apr-20","May-20","Jun-20","Jul-20","Aug-20","Sep-20","Oct-20","Nov-20","Dec-20","Jan-21","Feb-21","Mar-21","Apr-21","May-21","Jun-21","Jul-21","Aug-21","Sep-21","Oct-21","Nov-21","Dec-21","Jan-22","Feb-22","Mar-22","Apr-22","May-22","Jun-22","Jul-22","Aug-22","Sep-22","Oct-22","Nov-22","Dec-22","Jan-23","Feb-23","Mar-23","Apr-23","May-23","Jun-23","Jul-23","Aug-23","Sep-23","Oct-23","Nov-23","Dec-23","Jan-24","Feb-24","Mar-24","Apr-24","May-24","Jun-24","Jul-24","Aug-24","Sep-24","Oct-24","Nov-24","Dec-24","Jan-25","Feb-25","Mar-25","Apr-25","May-25","Jun-25","Jul-25","Aug-25","Sep-25","Oct-25","Nov-25","Dec-25","Jan-26","Feb-26","Mar-26","Apr-26","May-26","Jun-26","Jul-26","Aug-26"],"quarters":["2017Q1","2017Q2","2017Q3","2017Q4","2018Q1","2018Q2","2018Q3","2018Q4","2019Q1","2019Q2","2019Q3","2019Q4","2020Q1","2020Q2","2020Q3","2020Q4","2021Q1","2021Q2","2021Q3","2021Q4","2022Q1","2022Q2","2022Q3","2022Q4","2023Q1","2023Q2","2023Q3","2023Q4","2024Q1","2024Q2","2024Q3","2024Q4","2025Q1","2025Q2","2025Q3","2025Q4","2026Q1","2026Q2"],"uk_total":[1043161,878100,1071116,956509,1028220,1088937,866609,885918,855868,884323,858139,656496,993156,854140,921648,819751,891434,929598,871470,851109,925258,918490,891769,606566,940477,836918,910299,774572,1114809,1149322,1138549,951711,941919,994980,958791,729161,995431,1059264,952319,591764,472219,530619,578067,611751,699811,778735,674237,624026,719538,674654,1091585,875835,1043196,1015725,1140978,990087,1076333,1115843,1091179,970159,1234921,1130869,1239020,1036472,1282146,1155792,1184084,1145296,1120896,1187214,1133684,930039,1121015,990943,1006089,842361,1003770,1034742,757572,729173,631745,647390,650866,586945,786786,661580,653206,777919,825735,735180,764107,698154,710546,684663,607964,406468,657327,724372,748005,655178,833029,759312,753491,694996,742489,752906,729118,364060,689895,593085,null,654444,682862,694852,720268,720638],"man_total":[27914,23638,29080,25187,27830,25213,21223,21578,20791,22114,21293,16719,24482,22141,24415,21448,25488,24748,23300,22363,24581,24205,24559,16532,26402,23213,24809,21817,31323,32879,41197,27061,25875,26347,26061,20442,27320,28963,26692,14811,11134,12016,13378,14096,15564,18652,15865,14439,17148,16367,27161,21811,24007,23995,26467,22969,24219,27183,25113,23084,28243,25865,29886,25486,31843,28493,28508,27670,28159,29629,30562,25510,28609,26174,24085,21360,24139,26362,19369,18785,15808,16269,16121,14839,20195,16338,16215,18879,19262,16824,17961,16211,16688,15499,14072,9596,14923,17392,17525,15267,20218,20104,18930,16794,16940,17635,18129,9374,16304,13436,null,15654,16416,15087,16466,16475],"occupations":[["1111","Chief executives and senior officials"],["1112","Elected officers and representatives"],["1121","Production managers and directors in manufacturing"],["1122","Production managers and directors in construction"],["1123","Production managers and directors in mining and energy"],["1131","Financial managers and directors"],["1132","Marketing, sales and advertising directors"],["1133","Public relations and communications directors"],["1134","Purchasing managers and directors"],["1135","Charitable organisation managers and directors"],["1136","Human resource managers and directors"],["1137","Information technology directors"],["1139","Functional managers and directors n.e.c."],["1140","Directors in logistics, warehousing and transport"],["1150","Managers and directors in retail and wholesale"],["1161","Officers in armed forces"],["1162","Senior police officers"],["1163","Senior officers in fire, ambulance, prison and related services"],["1171","Health services and public health managers and directors"],["1172","Social services managers and directors"],["1211","Managers and proprietors in agriculture and horticulture"],["1212","Managers and proprietors in forestry, fishing and related services"],["1221","Hotel and accommodation managers and proprietors"],["1222","Restaurant and catering establishment managers and proprietors"],["1223","Publicans and managers of licensed premises"],["1224","Leisure and sports managers and proprietors"],["1225","Travel agency managers and proprietors"],["1231","Health care practice managers"],["1232","Residential, day and domiciliary care managers and proprietors"],["1233","Early education and childcare services proprietors"],["1241","Managers in transport and distribution"],["1242","Managers in storage and warehousing"],["1243","Managers in logistics"],["1251","Property, housing and estate managers"],["1252","Garage managers and proprietors"],["1253","Hairdressing and beauty salon managers and proprietors"],["1254","Waste disposal and environmental services managers"],["1255","Managers and directors in the creative industries"],["1256","Betting shop and gambling establishment managers"],["1257","Hire services managers and proprietors"],["1258","Directors in consultancy services"],["1259","Managers and proprietors in other services n.e.c."],["2111","Chemical scientists"],["2112","Biological scientists"],["2113","Biochemists and biomedical scientists"],["2114","Physical scientists"],["2115","Social and humanities scientists"],["2119","Natural and social science professionals n.e.c."],["2121","Civil engineers"],["2122","Mechanical engineers"],["2123","Electrical engineers"],["2124","Electronics engineers"],["2125","Production and process engineers"],["2126","Aerospace engineers"],["2127","Engineering project managers and project engineers"],["2129","Engineering professionals n.e.c."],["2131","IT project managers"],["2132","IT managers"],["2133","IT business analysts, architects and systems designers"],["2134","Programmers and software development professionals"],["2135","Cyber security professionals"],["2136","IT quality and testing professionals"],["2137","IT network professionals"],["2139","Information technology professionals n.e.c."],["2141","Web design professionals"],["2142","Graphic and multimedia designers"],["2151","Conservation professionals"],["2152","Environment professionals"],["2161","Research and development (R&D) managers"],["2162","Other researchers, unspecified discipline"],["2211","Generalist medical practitioners"],["2212","Specialist medical practitioners"],["2221","Physiotherapists"],["2222","Occupational therapists"],["2223","Speech and language therapists"],["2224","Psychotherapists and cognitive behaviour therapists"],["2225","Clinical psychologists"],["2226","Other psychologists"],["2229","Therapy professionals n.e.c."],["2231","Midwifery nurses"],["2232","Registered community nurses"],["2233","Registered specialist nurses"],["2234","Registered nurse practitioners"],["2235","Registered mental health nurses"],["2236","Registered children's nurses"],["2237","Other registered nursing professionals"],["2240","Veterinarians"],["2251","Pharmacists"],["2252","Optometrists"],["2253","Dental practitioners"],["2254","Medical radiographers"],["2255","Paramedics"],["2256","Podiatrists"],["2259","Other health professionals n.e.c."],["2311","Higher education teaching professionals"],["2312","Further education teaching professionals"],["2313","Secondary education teaching professionals"],["2314","Primary education teaching professionals"],["2315","Nursery education teaching professionals"],["2316","Special and additional needs education teaching professionals"],["2317","Teachers of English as a foreign language"],["2319","Teaching professionals n.e.c."],["2321","Head teachers and principals"],["2322","Education managers"],["2323","Education advisers and school inspectors"],["2324","Early education and childcare services managers"],["2329","Other educational professionals n.e.c"],["2411","Barristers and judges"],["2412","Solicitors and lawyers"],["2419","Legal professionals n.e.c."],["2421","Chartered and certified accountants"],["2422","Finance and investment analysts and advisers"],["2423","Taxation experts"],["2431","Management consultants and business analysts"],["2432","Marketing and commercial managers"],["2433","Actuaries, economists and statisticians"],["2434","Business and related research professionals"],["2435","Professional/Chartered company secretaries"],["2439","Business, research and administrative professionals n.e.c."],["2440","Business and financial project management professionals"],["2451","Architects"],["2452","Chartered architectural technologists, planning officers and consultants"],["2453","Quantity surveyors"],["2454","Chartered surveyors"],["2455","Construction project managers and related professionals"],["2461","Social workers"],["2462","Probation officers"],["2463","Clergy"],["2464","Youth work professionals"],["2469","Welfare professionals n.e.c."],["2471","Librarians"],["2472","Archivists, conservators and curators"],["2481","Quality control and planning engineers"],["2482","Quality assurance and regulatory professionals"],["2483","Environmental health professionals"],["2491","Newspaper, periodical and broadcast editors"],["2492","Newspaper and periodical broadcast journalists and reporters"],["2493","Public relations professionals"],["2494","Advertising accounts managers and creative directors"],["3111","Laboratory technicians"],["3112","Electrical and electronics technicians"],["3113","Engineering technicians"],["3114","Building and civil engineering technicians"],["3115","Quality assurance technicians"],["3116","Planning, process and production technicians"],["3119","Science, engineering and production technicians n.e.c."],["3120","CAD, drawing and architectural technicians"],["3131","IT operations technicians"],["3132","IT user support technicians"],["3133","Database administrators and web content technicians"],["3211","Dispensing opticians"],["3212","Pharmaceutical technicians"],["3213","Medical and dental technicians"],["3214","Complementary health associate professionals"],["3219","Health associate professionals n.e.c."],["3221","Youth and community workers"],["3222","Child and early years officers"],["3223","Housing officers"],["3224","Counsellors"],["3229","Welfare and housing associate professionals n.e.c."],["3231","Higher level teaching assistants"],["3232","Early education and childcare practitioners"],["3240","Veterinary nurses"],["3311","Non-commissioned officers and other ranks"],["3312","Police officers (sergeant and below)"],["3313","Fire service officers (watch manager and below)"],["3314","Prison service officers (below principal officer)"],["3319","Protective service associate professionals n.e.c."],["3411","Artists"],["3412","Authors, writers and translators"],["3413","Actors, entertainers and presenters"],["3414","Dancers and choreographers"],["3415","Musicians"],["3416","Arts officers, producers and directors"],["3417","Photographers, audio-visual and broadcasting equipment operators"],["3421","Interior designers"],["3422","Clothing, fashion and accessories designers"],["3429","Design occupations n.e.c."],["3431","Sports players"],["3432","Sports coaches, instructors and officials"],["3433","Fitness and wellbeing instructors"],["3511","Aircraft pilots and air traffic controllers"],["3512","Ship and hovercraft officers"],["3520","Legal associate professionals"],["3531","Brokers"],["3532","Insurance underwriters"],["3533","Financial and accounting technicians"],["3534","Financial accounts managers"],["3541","Estimators, valuers and assessors"],["3542","Importers and exporters"],["3543","Project support officers"],["3544","Data analysts"],["3549","Business associate professionals n.e.c."],["3551","Buyers and procurement officers"],["3552","Business sales executives"],["3553","Merchandisers"],["3554","Advertising and marketing associate professionals"],["3555","Estate agents and auctioneers"],["3556","Sales accounts and business development managers"],["3557","Events managers and organisers"],["3560","Public services associate professionals"],["3571","Human resources and industrial relations officers"],["3572","Careers advisers and vocational guidance specialists"],["3573","Information technology trainers"],["3574","Other vocational and industrial trainers"],["3581","Inspectors of standards and regulations"],["3582","Health and safety managers and officers"],["4111","National government administrative occupations"],["4112","Local government administrative occupations"],["4113","Officers of non-governmental organisations"],["4121","Credit controllers"],["4122","Book-keepers, payroll managers and wages clerks"],["4123","Bank and post office clerks"],["4124","Finance officers"],["4129","Financial administrative occupations n.e.c."],["4131","Records clerks and assistants"],["4132","Pensions and insurance clerks and assistants"],["4133","Stock control clerks and assistants"],["4134","Transport and distribution clerks and assistants"],["4135","Library clerks and assistants"],["4136","Human resources administrative occupations"],["4141","Office managers"],["4142","Office supervisors"],["4143","Customer service managers"],["4151","Sales administrators"],["4152","Data entry administrators"],["4159","Other administrative occupations n.e.c."],["4211","Medical secretaries"],["4212","Legal secretaries"],["4213","School secretaries"],["4214","Company secretaries and administrators"],["4215","Personal assistants and other secretaries"],["4216","Receptionists"],["4217","Typists and related keyboard occupations"],["5111","Farmers"],["5112","Horticultural trades"],["5113","Gardeners and landscape gardeners"],["5114","Groundsmen and greenkeepers"],["5119","Agricultural and fishing trades n.e.c."],["5211","Sheet metal workers"],["5212","Metal plate workers, smiths, moulders and related occupations"],["5213","Welding trades"],["5214","Pipe fitters"],["5221","Metal machining setters and setter-operators"],["5222","Tool makers, tool fitters and markers-out"],["5223","Metal working production and maintenance fitters"],["5224","Precision instrument makers and repairers"],["5225","Air-conditioning and refrigeration installers and repairers"],["5231","Vehicle technicians, mechanics and electricians"],["5232","Vehicle body builders and repairers"],["5233","Vehicle paint technicians"],["5234","Aircraft maintenance and related trades"],["5235","Boat and ship builders and repairers"],["5236","Rail and rolling stock builders and repairers"],["5241","Electricians and electrical fitters"],["5242","Telecoms and related network installers and repairers"],["5243","TV, video and audio servicers and repairers"],["5244","Computer system and equipment installers and servicers"],["5245","Security system installers and repairers"],["5246","Electrical service and maintenance mechanics and repairers"],["5249","Electrical and electronic trades n.e.c."],["5250","Skilled metal, electrical and electronic trades supervisors"],["5311","Steel erectors"],["5312","Stonemasons and related trades"],["5313","Bricklayers"],["5314","Roofers, roof tilers and slaters"],["5315","Plumbers and heating and ventilating installers and repairers"],["5316","Carpenters and joiners"],["5317","Glaziers, window fabricators and fitters"],["5319","Construction and building trades n.e.c."],["5321","Plasterers"],["5322","Floorers and wall tilers"],["5323","Painters and decorators"],["5330","Construction and building trades supervisors"],["5411","Upholsterers"],["5412","Footwear and leather working trades"],["5413","Tailors and dressmakers"],["5419","Textiles, garments and related trades n.e.c."],["5421","Pre-press technicians"],["5422","Printers"],["5423","Print finishing and binding workers"],["5431","Butchers"],["5432","Bakers and flour confectioners"],["5433","Fishmongers and poultry dressers"],["5434","Chefs"],["5435","Cooks"],["5436","Catering and bar managers"],["5441","Glass and ceramics makers, decorators and finishers"],["5442","Furniture makers and other craft woodworkers"],["5443","Florists"],["5449","Other skilled trades n.e.c."],["6111","Early education and childcare assistants"],["6112","Teaching assistants"],["6113","Educational support assistants"],["6114","Childminders"],["6116","Nannies and au pairs"],["6117","Playworkers"],["6121","Pest control officers"],["6129","Animal care services occupations n.e.c."],["6131","Nursing auxiliaries and assistants"],["6132","Ambulance staff (excluding paramedics)"],["6133","Dental nurses"],["6134","Houseparents and residential wardens"],["6135","Care workers and home carers"],["6136","Senior care workers"],["6137","Care escorts"],["6138","Undertakers, mortuary and crematorium assistants"],["6211","Sports and leisure assistants"],["6212","Travel agents"],["6213","Air travel assistants"],["6214","Rail travel assistants"],["6219","Leisure and travel service occupations n.e.c."],["6221","Hairdressers and barbers"],["6222","Beauticians and related occupations"],["6231","Housekeepers and related occupations"],["6232","Caretakers"],["6240","Cleaning and housekeeping managers and supervisors"],["6250","Bed and breakfast and guest house owners and proprietors"],["6311","Police community support officers"],["6312","Parking and civil enforcement occupations"],["7111","Sales and retail assistants"],["7112","Retail cashiers and check-out operators"],["7113","Telephone salespersons"],["7114","Pharmacy and optical dispensing assistants"],["7115","Vehicle and parts salespersons and advisers"],["7121","Collector salespersons and credit agents"],["7122","Debt, rent and other cash collectors"],["7123","Roundspersons and van salespersons"],["7124","Market and street traders and assistants"],["7125","Visual merchandisers and related occupations"],["7129","Sales related occupations n.e.c."],["7131","Shopkeepers and owners - retail and wholesale"],["7132","Sales supervisors - retail and wholesale"],["7211","Call and contact centre occupations"],["7212","Telephonists"],["7213","Communication operators"],["7214","Market research interviewers"],["7219","Customer service occupations n.e.c."],["7220","Customer service supervisors"],["8111","Food, drink and tobacco process operatives"],["8112","Textile process operatives"],["8113","Chemical and related process operatives"],["8114","Plastics process operatives"],["8115","Metal making and treating process operatives"],["8119","Process operatives n.e.c."],["8120","Metal working machine operatives"],["8131","Paper and wood machine operatives"],["8132","Mining and quarry workers and related operatives"],["8133","Energy plant operatives"],["8134","Water and sewerage plant operatives"],["8135","Printing machine assistants"],["8139","Plant and machine operatives n.e.c."],["8141","Assemblers (electrical and electronic products)"],["8142","Assemblers (vehicles and metal goods)"],["8143","Routine inspectors and testers"],["8144","Weighers, graders and sorters"],["8145","Tyre, exhaust and windscreen fitters"],["8146","Sewing machinists"],["8149","Assemblers and routine operatives n.e.c."],["8151","Scaffolders, stagers and riggers"],["8152","Road construction operatives"],["8153","Rail construction and maintenance operatives"],["8159","Construction operatives n.e.c."],["8160","Production, factory and assembly supervisors"],["8211","Heavy and large goods vehicle drivers"],["8212","Bus and coach drivers"],["8213","Taxi and cab drivers and chauffeurs"],["8214","Delivery drivers and couriers"],["8215","Driving instructors"],["8219","Road transport drivers n.e.c."],["8221","Crane drivers"],["8222","Fork-lift truck drivers"],["8229","Mobile machine drivers and operatives n.e.c."],["8231","Train and tram drivers"],["8232","Marine and waterways transport operatives"],["8233","Air transport operatives"],["8234","Rail transport operatives"],["8239","Other drivers and transport operatives n.e.c."],["9111","Farm workers"],["9112","Forestry and related workers"],["9119","Fishing and other elementary agriculture occupations n.e.c."],["9121","Groundworkers"],["9129","Elementary construction occupations n.e.c."],["9131","Industrial cleaning process occupations"],["9132","Packers, bottlers, canners and fillers"],["9139","Elementary process plant occupations n.e.c."],["9211","Postal workers, mail sorters and messengers"],["9219","Elementary administration occupations n.e.c."],["9221","Window cleaners"],["9222","Street cleaners"],["9223","Cleaners and domestics"],["9224","Launderers, dry cleaners and pressers"],["9225","Refuse and salvage occupations"],["9226","Vehicle valeters and cleaners"],["9229","Elementary cleaning occupations n.e.c."],["9231","Security guards and related occupations"],["9232","School midday and crossing patrol occupations"],["9233","Exam invigilators"],["9241","Shelf fillers"],["9249","Elementary sales occupations n.e.c."],["9251","Elementary storage supervisors"],["9252","Warehouse operatives"],["9253","Delivery operatives"],["9259","Elementary storage occupations n.e.c."],["9261","Bar and catering supervisors"],["9262","Hospital porters"],["9263","Kitchen and catering assistants"],["9264","Waiters and waitresses"],["9265","Bar staff"],["9266","Coffee shop workers"],["9267","Leisure and theme park attendants"],["9269","Other elementary services occupations n.e.c."]],"places":["Aberdeen City","Aberdeenshire","Adur","Amber Valley","Angus","Antrim and Newtownabbey","Ards and North Down","Argyll and Bute","Armagh City, Banbridge and Craigavon","Arun","Ashfield","Ashford","Babergh","Barnsley","Basildon","Basingstoke and Deane","Bassetlaw","Bath and North East Somerset","Bedford","Belfast","Birmingham","Blaby","Blackburn with Darwen","Blackpool","Blaenau Gwent","Bolsover","Bolton","Boston","Bournemouth, Christchurch and Poole","Bracknell Forest","Bradford","Braintree","Breckland","Brentwood","Bridgend","Brighton and Hove","Bristol, City of","Broadland","Bromsgrove","Broxbourne","Broxtowe","Buckinghamshire","Burnley","Bury","Caerphilly","Calderdale","Cambridge","Cannock Chase","Canterbury","Cardiff","Carmarthenshire","Castle Point","Causeway Coast and Glens","Central Bedfordshire","Ceredigion","Charnwood","Chelmsford","Cheltenham","Cherwell","Cheshire East","Cheshire West and Chester","Chesterfield","Chichester","Chorley","City of Edinburgh","Clackmannanshire","Colchester","Conwy","Cornwall","Cotswold","County Durham","Coventry","Crawley","Cumberland","Dacorum","Darlington","Dartford","Denbighshire","Derby","Derbyshire Dales","Derry City and Strabane","Doncaster","Dorset","Dover","Dudley","Dumfries and Galloway","Dundee City","East Ayrshire","East Cambridgeshire","East Devon","East Dunbartonshire","East Hampshire","East Hertfordshire","East Lindsey","East Lothian","East Midlands","East Renfrewshire","East Riding of Yorkshire","East Staffordshire","East Suffolk","East of England","Eastbourne","Eastleigh","Elmbridge","Epping Forest","Epsom and Ewell","Erewash","Exeter","Falkirk","Fareham","Fenland","Fermanagh and Omagh","Fife","Flintshire","Folkestone and Hythe","Forest of Dean","Fylde","Gateshead","Gedling","Glasgow City","Gloucester","Gosport","Gravesham","Great Yarmouth","Guildford","Gwynedd","Halton","Harborough","Harlow","Hart","Hartlepool","Hastings","Havant","Herefordshire, County of","Hertsmere","High Peak","Highland","Hinckley and Bosworth","Horsham","Huntingdonshire","Hyndburn","Inverclyde","Ipswich","Isle of Anglesey","Isle of Wight","Isles of Scilly","King's Lynn and West Norfolk","Kingston upon Hull, City of","Kirklees","Knowsley","Lancaster","Leeds","Leicester","Lewes","Lichfield","Lincoln","Lisburn and Castlereagh","Liverpool","London","Luton","Maidstone","Maldon","Malvern Hills","Manchester","Mansfield","Medway","Melton","Merthyr Tydfil","Mid Devon","Mid Suffolk","Mid Sussex","Mid Ulster","Mid and East Antrim","Middlesbrough","Midlothian","Milton Keynes","Mole Valley","Monmouthshire","Moray","Na h-Eileanan Siar","Neath Port Talbot","New Forest","Newark and Sherwood","Newcastle upon Tyne","Newcastle-under-Lyme","Newport","Newry, Mourne and Down","North Ayrshire","North Devon","North East","North East Derbyshire","North East Lincolnshire","North Hertfordshire","North Kesteven","North Lanarkshire","North Lincolnshire","North Norfolk","North Northamptonshire","North Somerset","North Tyneside","North Warwickshire","North West","North West Leicestershire","North Yorkshire","Northern Ireland","Northumberland","Norwich","Nottingham","Nuneaton and Bedworth","Oadby and Wigston","Oldham","Orkney Islands","Oxford","Pembrokeshire","Pendle","Perth and Kinross","Peterborough","Plymouth","Portsmouth","Powys","Preston","Reading","Redcar and Cleveland","Redditch","Reigate and Banstead","Renfrewshire","Rhondda Cynon Taf","Ribble Valley","Rochdale","Rochford","Rossendale","Rother","Rotherham","Rugby","Runnymede","Rushcliffe","Rushmoor","Rutland","Salford","Sandwell","Scotland","Scottish Borders","Sefton","Sevenoaks","Sheffield","Shetland Islands","Shropshire","Slough","Solihull","Somerset","South Ayrshire","South Cambridgeshire","South Derbyshire","South East","South Gloucestershire","South Hams","South Holland","South Kesteven","South Lanarkshire","South Norfolk","South Oxfordshire","South Ribble","South Staffordshire","South Tyneside","South West","Southampton","Southend-on-Sea","Spelthorne","St Albans","St. Helens","Stafford","Staffordshire Moorlands","Stevenage","Stirling","Stockport","Stockton-on-Tees","Stoke-on-Trent","Stratford-on-Avon","Stroud","Sunderland","Surrey Heath","Swale","Swansea","Swindon","Tameside","Tamworth","Tandridge","Teignbridge","Telford and Wrekin","Tendring","Test Valley","Tewkesbury","Thanet","Three Rivers","Thurrock","Tonbridge and Malling","Torbay","Torfaen","Torridge","Trafford","Tunbridge Wells","Uttlesford","Vale of Glamorgan","Vale of White Horse","Wakefield","Wales","Walsall","Warrington","Warwick","Watford","Waverley","Wealden","Welwyn Hatfield","West Berkshire","West Devon","West Dunbartonshire","West Lancashire","West Lindsey","West Lothian","West Midlands","West Northamptonshire","West Oxfordshire","West Suffolk","Westmorland and Furness","Wigan","Wiltshire","Winchester","Windsor and Maidenhead","Wirral","Woking","Wokingham","Wolverhampton","Worcester","Worthing","Wrexham","Wychavon","Wyre","Wyre Forest","York","Yorkshire and The Humber"],"decline":[["Bricklayers",-34.1,1210,1837],["Medical and dental technicians",-31.9,3341,4908],["Web design professionals",-28.1,1121,1560],["Business and related research professionals",-26.3,4692,6369],["Gardeners and landscape gardeners",-25.3,2068,2768]],"growth":[["Shopkeepers and owners - retail and wholesale",123.0,3505,1572],["Bank and post office clerks",59.5,9126,5723],["Veterinarians",41.2,4491,3180],["IT business analysts, architects and systems designers",37.5,27469,19971],["Delivery drivers and couriers",28.1,34214,26709]],"topQ":[["Sales accounts and business development managers",1605,null],["Programmers and software development professionals",1362,1673],["Business sales executives",1075,null],["IT business analysts, architects and systems designers",1071,1136],["Solicitors and lawyers",931,1370],["Business and financial project management professionals",829,null],["Human resources and industrial relations officers",757,1027],["Book-keepers, payroll managers and wages clerks",692,null]],"topM3":[["Information Technology Professionals",1541,1080],["Sales, Marketing and Related Associate Professionals",1194,1325],["Functional Managers and Directors",693,579],["Engineering Professionals",562,392],["Legal Professionals",561,638],["Business, Research and Administrative Professionals",481,435],["HR, Training and Other Vocational Associate Guidance Professionals",426,522],["Architects, Chartered Architectural Technologists, Planning Officers, Surveyors and Construction Professionals",420,363]],"scen":{"dev":{"code":"2134","name":"Programmers and software development professionals","short":"Software developers","code3":"213","name3":"Information Technology Professionals","q":[4339,4004,3028,3701,4137,4158,4303,3473,3817,5077,5408,3886,4415,2630,3031,3044,4037,4554,4135,3968,4174,4248,4293,4228,3624,2450,2138,1515,1511,1150,1008,844,1192,1673,1413,1421,null,1362],"nwM":[3264,2695,3520,2950,3305,2607,2040,2244,2245,3069,2672,2189,3140,2627,2833,2485,2764,2711,2730,2548,2673,2479,2327,1693,2376,2281,2454,2409,3677,4034,4456,3006,2680,2741,2778,2020,2681,3062,3122,2076,1762,1924,2120,2377,2514,2803,2298,2326,3221,2762,3895,3687,4346,3057,3316,2926,2749,3100,2762,2633,3081,2683,2997,2588,3229,2773,2560,2831,3512,3015,2982,3007,2530,2880,2119,1471,1672,1864,1570,1508,987,1037,1029,994,1382,1106,813,889,962,769,803,696,814,770,645,477,744,928,1015,973,1574,1641,1243,805,1056,967,1521,589,1015,656,null,789,1121,1827,928,1123],"m3":[2697,2325,2969,2542,2883,2065,1790,1938,1928,2534,2158,1802,2427,2381,2598,2285,2631,2534,2535,2499,2619,2371,2292,1615,2395,2375,2489,2401,3484,3623,4602,2841,2730,2652,2750,2006,2645,3004,3012,1773,1481,1515,1751,1738,2019,2336,1878,1781,2335,2095,3516,3162,2984,2864,3213,2672,2556,3068,2796,2439,2909,2819,3257,2841,3293,2886,2874,2924,3387,3099,3163,2860,2787,2869,2172,1647,1851,2110,1755,1749,1193,1251,1201,1102,1395,1135,922,990,1042,841,943,814,930,851,797,626,904,1158,1196,1029,1686,1872,1469,1080,1219,1239,1780,750,1187,982,null,1246,1402,1269,1303,1541],"citiesQ":{"Manchester":[4339,4004,3028,3701,4137,4158,4303,3473,3817,5077,5408,3886,4415,2630,3031,3044,4037,4554,4135,3968,4174,4248,4293,4228,3624,2450,2138,1515,1511,1150,1008,844,1192,1673,1413,1421,null,1362],"London":[35215,35931,30396,32519,35228,32690,30688,24500,29726,32905,32751,26401,31986,19688,20091,21639,29444,29785,30216,28191,35842,33586,29794,25986,22880,15234,11786,9981,9129,7476,6871,5818,7860,9627,8152,9264,null,7421],"Leeds":[2804,2618,1632,2090,2916,2470,2473,2039,2415,3195,3322,2277,2596,1191,1468,1799,2235,2311,1994,1975,2232,2124,1839,1691,1465,1194,977,672,638,592,499,410,671,1140,838,866,null,664],"Birmingham":[2881,2771,1809,2212,2443,2355,2203,1889,2216,3605,3263,1697,2284,1353,1638,2137,2498,2633,2604,2618,2912,2474,2681,2389,1843,1416,1066,813,805,652,586,464,849,1399,843,823,null,657],"Bristol, City of":[3073,3150,2572,2899,2707,2423,2616,2300,2498,2979,3127,2167,2519,1277,1540,1756,2248,2540,2334,2331,2706,2388,2607,2547,2130,1162,988,861,735,643,576,494,720,1204,900,882,null,732],"Glasgow City":[1335,1424,1007,1071,1374,1167,1204,1152,1295,1570,1515,1302,1403,790,1007,1106,1561,1691,1472,1427,1626,1641,2107,1639,1321,906,751,541,599,438,454,449,620,1064,769,622,null,679],"Newcastle upon Tyne":[756,644,541,519,684,674,727,739,746,1066,898,764,884,682,780,897,1069,948,1024,889,1007,971,854,774,678,545,430,363,347,316,328,287,533,964,583,621,null,489],"Sheffield":[756,778,465,596,635,656,722,549,749,2650,1018,622,730,441,477,542,683,646,989,847,882,731,670,628,630,515,376,312,306,250,222,154,353,804,482,468,null,345],"Liverpool":[712,613,442,572,589,474,526,443,542,793,777,416,619,343,376,480,578,603,573,523,517,476,1078,1259,760,398,273,199,232,222,208,128,339,787,443,400,null,294],"Nottingham":[1512,1353,889,1047,1194,1081,1058,798,976,1808,1405,1027,1587,687,735,807,1147,1312,1047,1110,1067,1195,1060,1055,1019,629,496,311,530,365,289,196,497,1127,515,477,null,429],"Cardiff":[802,748,465,621,684,606,744,665,703,866,839,700,768,493,653,583,768,813,717,825,923,880,1405,1392,686,499,358,311,298,235,245,179,185,240,226,164,null,348],"Stockport":[326,349,185,247,223,201,204,236,208,379,279,231,271,254,267,204,244,256,183,236,273,430,217,204,161,153,102,80,115,73,68,41,64,89,72,68,null,172],"Salford":[162,179,115,152,139,105,113,104,91,192,221,221,209,198,358,305,377,355,275,262,231,253,301,266,200,147,124,103,114,83,64,61,83,72,68,77,null,null]},"citiesM3":{"Manchester":[2697,2325,2969,2542,2883,2065,1790,1938,1928,2534,2158,1802,2427,2381,2598,2285,2631,2534,2535,2499,2619,2371,2292,1615,2395,2375,2489,2401,3484,3623,4602,2841,2730,2652,2750,2006,2645,3004,3012,1773,1481,1515,1751,1738,2019,2336,1878,1781,2335,2095,3516,3162,2984,2864,3213,2672,2556,3068,2796,2439,2909,2819,3257,2841,3293,2886,2874,2924,3387,3099,3163,2860,2787,2869,2172,1647,1851,2110,1755,1749,1193,1251,1201,1102,1395,1135,922,990,1042,841,943,814,930,851,797,626,904,1158,1196,1029,1686,1872,1469,1080,1219,1239,1780,750,1187,982,null,1246,1402,1269,1303,1541],"London":[25586,20965,25359,22915,24569,24482,20127,20743,19618,23593,21782,16812,24962,22796,22918,20736,22207,21511,22446,19867,19399,18458,20111,12820,20642,21111,21767,18015,24846,25941,26336,21782,22445,20437,21059,14924,22462,22864,25369,14848,12033,13308,12918,13293,15332,16356,14867,14152,20115,17419,25172,20398,22020,21548,24317,20539,20605,22066,21362,20520,25651,27959,28780,23397,29380,24739,24662,23743,21042,21643,21516,18735,19261,19133,16639,11962,13980,14393,10589,11180,7924,9132,8582,8987,9831,7576,7079,7302,7282,6305,6896,6333,6442,6370,6076,4262,6085,7787,8788,7057,9927,9729,8139,7073,8294,9703,10388,4793,8079,6510,null,6822,8267,7904,9013,10521],"Leeds":[1792,1435,1820,1552,1847,1484,1025,1158,1043,1533,1374,1116,1742,1954,1762,1491,1560,1596,1580,1579,1544,1577,1329,1077,1540,1543,1561,1369,2188,2549,2948,1823,1683,1643,1602,1491,1741,1997,1720,973,620,716,840,1008,1070,1389,1214,1098,1606,1265,1912,1623,1847,1546,1605,1407,1347,1514,1511,1450,1982,1607,1705,1437,1898,1717,1652,1524,1376,1489,1522,1156,1307,1267,1182,951,1118,1130,881,888,640,605,646,585,729,491,473,568,588,506,528,458,462,447,484,325,452,822,734,656,1186,1326,1002,643,749,719,1195,431,644,548,null,571,733,684,728,759],"Birmingham":[2401,1807,1886,1910,2146,1794,1379,1435,1431,1786,1753,1267,1735,1692,1783,1487,1823,1588,1569,1622,1619,1521,1543,1125,1699,1588,1714,1587,2400,3302,3775,1877,1646,1560,1608,1164,1587,2173,1656,1246,710,893,1153,995,1152,1586,1513,1619,1771,1570,2345,2037,2056,2055,2324,1934,1960,2065,2065,2043,2598,2237,2479,2084,2309,2035,2103,1918,2688,2304,2252,1677,1894,1534,1395,1039,1478,1432,1060,1070,734,901,744,751,963,702,615,704,683,582,661,629,588,558,658,430,532,934,1059,874,1750,1311,1131,763,837,800,1398,481,761,592,null,752,853,822,719,960],"Bristol, City of":[2389,1648,1905,1936,2165,1837,1557,1539,1717,1981,1733,1585,1652,1584,1804,1376,1617,1605,1615,1644,1698,1670,1707,1220,1727,1549,1793,1378,2171,2160,2292,1797,2038,1573,1571,1238,1643,1731,1686,952,716,819,1009,840,1179,1287,1158,1038,1375,1277,2020,1689,1818,1561,1800,1549,1544,1802,1623,1542,2091,2067,1965,1597,2142,1884,1778,1824,2320,1962,2091,1862,1806,1801,1497,969,1013,1075,963,917,725,859,749,767,884,638,652,697,688,560,598,557,560,551,531,448,536,780,844,725,1275,1400,1046,673,853,754,1361,494,724,529,null,695,871,787,756,884],"Glasgow City":[822,703,851,848,935,772,571,627,577,650,681,580,836,758,765,681,735,722,732,752,772,734,805,516,845,760,988,810,1228,1014,1056,841,913,857,896,624,892,830,841,548,384,497,677,621,630,663,688,648,838,766,1205,1080,1162,987,1086,979,967,1147,1023,952,1173,1091,1337,1081,1324,1194,1233,1249,1916,1380,1379,960,972,1004,1016,716,811,774,566,704,455,544,470,447,533,455,460,404,454,425,420,411,417,435,407,274,391,606,609,557,894,1071,756,564,571,484,872,304,501,374,null,569,668,639,604,611],"Newcastle upon Tyne":[548,366,495,411,397,391,277,367,349,355,362,277,461,411,417,304,422,446,406,401,448,487,497,331,511,418,521,421,1035,477,722,489,468,478,528,408,613,541,542,441,307,472,424,495,571,671,542,565,664,657,865,678,648,691,809,584,705,675,724,564,740,680,845,642,875,797,784,685,605,722,579,529,628,495,569,430,475,511,432,377,276,289,329,294,384,265,222,263,301,275,303,290,293,265,273,216,325,503,515,436,871,1111,751,406,456,387,958,278,336,219,null,357,446,438,375,379],"Sheffield":[500,402,511,481,488,415,290,323,299,440,371,284,442,378,413,358,418,414,419,458,407,428,414,309,499,479,451,438,828,3602,683,777,382,367,423,416,422,569,448,343,242,277,322,315,316,348,426,351,438,415,574,504,494,508,564,481,1071,862,508,436,738,548,641,487,629,535,545,514,451,571,458,501,576,455,485,376,399,452,374,330,236,216,266,253,297,215,186,188,231,222,247,197,186,174,179,131,210,375,441,343,779,976,652,355,357,250,818,224,255,249,null,280,365,376,271,348],"Liverpool":[454,389,455,362,426,322,250,315,295,320,417,289,395,343,365,266,321,364,397,359,372,329,293,271,368,366,365,314,597,670,760,442,392,357,370,279,419,409,474,262,235,244,251,260,266,319,310,275,390,328,465,460,457,391,457,399,429,457,386,370,567,393,491,371,447,464,444,492,1388,943,923,778,564,670,500,341,334,358,302,252,179,170,191,171,278,212,199,247,234,202,196,152,178,149,177,103,135,351,440,312,757,942,606,292,327,235,710,199,219,127,null,207,264,341,258,296],"Nottingham":[935,700,855,787,868,638,503,518,553,728,600,579,727,647,700,616,616,652,601,650,686,568,484,382,608,551,593,536,1109,1549,1184,747,680,695,675,565,835,1139,850,563,322,374,393,434,530,618,510,555,690,617,895,1036,781,707,842,675,696,977,668,664,745,674,831,777,840,809,771,700,660,648,616,824,729,801,541,403,477,471,380,363,289,276,216,236,370,369,278,282,316,224,235,217,235,215,190,145,218,537,577,509,1248,881,694,340,349,237,834,237,263,193,null,294,417,430,315,390],"Cardiff":[488,463,515,447,502,377,303,334,307,386,334,424,447,430,464,344,374,452,484,473,513,482,452,352,535,456,472,372,661,726,660,580,549,542,536,392,610,591,521,375,267,351,425,383,404,432,380,351,454,437,728,568,559,513,528,554,487,596,554,658,680,692,727,580,809,642,712,602,1621,1172,1126,529,539,523,563,348,466,446,357,285,236,290,255,210,265,224,220,232,193,194,241,192,189,211,165,154,186,196,189,181,232,211,218,205,196,234,214,109,225,169,null,243,346,419,336,336],"Stockport":[184,130,186,201,203,153,87,114,99,154,125,105,148,103,121,124,120,124,107,130,111,156,118,89,110,133,115,109,228,228,179,159,122,130,147,100,142,136,154,116,96,156,115,145,146,145,118,98,121,161,192,148,184,143,159,145,142,155,158,165,156,163,196,135,491,251,159,199,127,140,147,140,134,106,128,89,97,102,74,90,71,75,59,78,110,77,53,53,75,53,61,64,47,48,42,30,54,56,67,70,78,59,68,41,66,59,83,39,77,50,null,60,98,205,95,148],"Salford":[110,110,104,83,122,120,71,63,74,87,99,69,98,92,88,63,76,72,73,85,63,71,72,60,66,76,97,77,128,148,192,127,115,128,127,125,124,156,124,124,107,177,191,227,245,238,183,207,282,168,295,317,216,170,217,204,179,206,194,214,258,182,188,187,227,216,232,274,169,194,222,216,192,167,139,88,138,123,106,117,87,99,100,95,108,110,67,65,83,63,69,58,61,76,64,48,78,70,99,69,90,76,60,81,81,81,91,55,111,77,null,74,82,null,82,117]}},"police":{"code":"1162","name":"Senior police officers","short":"Senior police officers","code3":"116","name3":"Senior Officers in Protective Services","q":[0,2,3,1,2,3,1,1,1,2,7,4,14,9,4,5,8,3,7,13,6,3,6,4,7,8,0,14,11,5,7,2,2,2,4,6,null,2],"nwM":[4,4,5,4,1,4,4,4,3,2,3,1,6,3,3,1,3,5,2,3,6,6,1,0,3,4,5,1,7,6,6,8,6,5,8,11,27,10,19,35,4,19,19,12,5,18,8,10,17,10,20,5,6,9,19,15,12,9,15,9,10,13,6,5,11,5,8,9,3,3,3,9,9,6,4,5,6,7,1,5,1,4,10,5,11,5,4,3,8,5,6,6,8,0,2,5,3,0,4,1,0,3,3,7,1,5,9,2,6,0,null,1,5,3,1,0],"m3":[13,13,11,12,10,8,20,12,14,16,15,16,16,22,18,13,16,19,23,25,19,14,11,12,13,14,23,8,30,15,22,21,12,19,21,16,20,20,17,13,4,9,12,12,12,13,7,13,21,20,22,13,12,17,22,16,21,23,22,25,19,21,23,20,34,15,23,20,9,18,18,31,18,18,18,14,16,11,8,14,14,17,16,14,17,13,15,19,16,16,18,9,10,14,8,8,8,6,23,11,16,15,20,13,10,24,15,5,9,15,null,9,11,6,15,11],"citiesQ":{"Manchester":[0,2,3,1,2,3,1,1,1,2,7,4,14,9,4,5,8,3,7,13,6,3,6,4,7,8,0,14,11,5,7,2,2,2,4,6,null,2],"London":[28,31,20,17,20,21,34,27,28,31,39,42,53,23,35,23,29,28,25,44,55,27,25,49,33,33,22,30,14,33,28,24,23,19,21,22,null,16],"Leeds":[1,0,1,1,1,0,1,1,0,0,4,2,4,1,5,2,2,3,2,0,4,3,2,3,2,0,0,0,4,8,0,4,3,3,5,7,null,3],"Birmingham":[1,5,2,2,4,3,0,3,1,1,3,7,2,5,3,6,9,4,1,1,3,1,3,8,7,2,3,0,2,4,4,3,2,2,3,5,null,3],"Bristol, City of":[1,5,1,1,0,2,1,3,0,0,4,1,4,0,1,1,0,2,4,2,2,5,2,3,0,2,2,1,0,4,1,5,0,5,4,2,null,1],"Glasgow City":[2,2,0,0,0,1,1,0,0,1,7,0,1,1,0,2,2,0,4,3,4,0,1,1,0,1,1,1,0,1,2,0,0,1,4,6,null,0],"Newcastle upon Tyne":[1,0,1,0,0,0,0,2,2,0,3,0,0,1,3,1,5,1,2,1,2,0,1,1,3,3,1,0,0,0,2,3,0,0,2,0,null,0],"Sheffield":[1,0,1,1,2,2,1,0,1,1,5,3,2,0,1,5,4,5,1,1,0,3,0,0,0,5,3,1,3,0,1,1,0,0,1,1,null,0],"Liverpool":[0,1,1,0,1,0,3,0,1,7,4,2,5,9,2,1,2,3,6,1,0,1,5,4,1,1,0,2,1,3,4,0,1,0,2,1,null,0],"Nottingham":[1,0,2,1,2,0,0,0,2,4,1,0,2,0,2,0,1,1,2,4,2,1,0,1,0,0,1,1,0,0,1,1,2,0,1,0,null,0],"Cardiff":[2,2,1,1,0,0,0,1,0,1,6,4,1,0,0,1,1,0,1,1,1,3,0,1,1,0,0,0,0,1,1,4,0,0,0,0,null,0],"Stockport":[2,0,0,0,2,0,0,1,2,1,0,0,1,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,null,0],"Salford":[0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,2,2,0,0,1,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,1,null,null]},"citiesM3":{"Manchester":[13,13,11,12,10,8,20,12,14,16,15,16,16,22,18,13,16,19,23,25,19,14,11,12,13,14,23,8,30,15,22,21,12,19,21,16,20,20,17,13,4,9,12,12,12,13,7,13,21,20,22,13,12,17,22,16,21,23,22,25,19,21,23,20,34,15,23,20,9,18,18,31,18,18,18,14,16,11,8,14,14,17,16,14,17,13,15,19,16,16,18,9,10,14,8,8,8,6,23,11,16,15,20,13,10,24,15,5,9,15,null,9,11,6,15,11],"London":[173,168,189,154,149,167,174,147,157,153,127,114,174,188,183,173,182,159,168,159,167,148,149,90,158,147,154,135,191,157,166,165,189,178,169,130,176,208,150,122,73,118,192,127,134,135,132,140,130,123,191,129,130,148,188,182,141,199,144,169,201,223,236,187,246,209,194,211,221,205,222,185,181,204,178,137,163,176,139,127,104,148,110,128,142,88,97,128,104,104,94,128,119,113,78,61,110,119,144,76,131,118,118,123,108,127,144,76,113,79,null,92,120,107,133,117],"Leeds":[7,5,10,6,1,8,5,5,6,8,8,8,17,9,15,7,7,12,15,11,3,11,4,7,7,5,6,10,9,5,9,7,11,11,7,2,10,10,11,6,6,10,7,14,14,10,9,6,9,14,20,4,8,7,12,9,7,4,6,8,13,8,10,21,16,10,12,15,15,17,9,5,10,11,11,11,8,19,9,4,5,6,5,10,9,9,4,13,13,9,4,6,11,10,4,7,5,9,9,10,8,12,14,13,3,9,8,6,7,4,null,10,7,8,15,15],"Birmingham":[13,11,11,11,11,16,7,13,10,14,6,10,10,14,8,18,9,9,9,14,7,9,8,12,8,18,13,10,22,17,28,20,15,18,20,5,11,13,13,6,8,13,13,10,18,10,20,25,22,23,18,19,24,27,24,20,21,18,26,16,18,21,17,12,23,17,35,18,25,29,17,18,20,16,16,6,18,21,12,11,13,14,11,8,16,11,14,13,17,14,11,7,15,12,9,7,10,12,19,8,13,16,17,15,13,20,17,11,14,4,null,18,7,19,25,14],"Bristol, City of":[8,11,11,8,8,7,11,10,10,9,18,5,16,13,16,11,12,12,13,12,10,12,9,8,13,13,12,10,15,9,21,12,10,9,5,7,4,9,6,6,3,6,5,10,8,11,10,19,5,12,12,8,12,8,8,14,8,10,16,11,16,9,14,7,19,9,12,9,14,18,11,9,11,12,13,10,12,18,4,5,8,8,8,0,4,1,5,11,11,9,9,12,2,13,11,4,7,6,10,5,15,14,13,3,10,12,7,4,5,3,null,3,4,6,17,13],"Glasgow City":[4,7,5,3,5,3,5,3,4,6,1,4,3,4,4,4,5,5,5,5,3,5,2,5,5,3,6,10,3,10,8,10,7,5,11,4,5,8,12,5,6,11,6,6,5,3,9,6,6,4,18,8,5,11,9,5,9,10,8,12,17,10,13,9,8,8,12,8,12,8,10,3,5,11,10,10,8,14,6,7,6,4,2,1,3,4,3,9,9,12,10,6,2,5,3,5,9,10,19,2,14,20,12,11,13,19,15,2,4,6,null,4,10,4,5,5],"Newcastle upon Tyne":[4,2,6,3,2,3,6,4,2,4,5,4,4,4,6,2,4,3,5,4,3,2,4,2,5,3,3,0,5,5,0,3,6,1,3,1,0,0,2,1,0,3,6,3,5,4,5,0,2,5,6,0,7,3,5,3,6,1,6,4,4,7,7,6,5,3,5,6,2,4,3,3,6,9,8,6,7,5,4,3,1,3,5,2,3,4,2,1,5,5,11,6,4,1,4,4,3,5,10,3,7,10,9,4,2,5,7,4,1,4,null,2,2,4,5,3],"Sheffield":[2,2,8,3,4,1,2,3,3,3,3,2,4,3,3,1,7,4,10,6,5,3,3,4,5,2,5,5,4,5,4,2,6,2,2,2,2,3,3,1,1,4,4,6,9,9,3,4,4,4,9,8,3,6,7,2,3,3,7,7,5,11,12,10,11,5,6,5,6,4,8,2,8,1,7,4,8,5,2,4,4,7,3,5,7,3,3,7,6,3,6,1,4,6,3,5,4,9,11,7,14,14,13,8,4,6,5,3,9,3,null,1,3,2,1,6],"Liverpool":[4,6,4,2,5,4,8,5,2,2,4,2,5,4,8,3,4,8,6,8,6,6,1,5,5,6,5,4,11,6,7,10,7,3,6,3,7,2,9,6,3,6,7,1,4,3,9,1,4,1,7,13,8,4,10,9,10,3,7,6,4,4,10,7,6,7,10,7,6,6,6,10,11,7,3,7,6,11,8,1,6,5,3,5,9,1,4,11,6,4,2,9,5,3,5,1,2,6,11,5,6,13,9,7,5,5,5,6,4,3,null,3,7,3,3,4],"Nottingham":[2,4,6,3,3,1,4,6,6,3,7,1,7,3,7,6,9,9,5,6,8,2,8,5,4,3,9,4,10,7,9,9,6,2,3,3,5,6,8,3,3,3,8,4,3,8,3,7,6,5,7,3,6,5,5,0,9,11,10,7,7,3,16,4,9,9,6,6,4,9,12,7,4,4,7,4,3,10,7,2,8,6,2,6,5,6,8,7,3,5,5,11,2,6,1,4,6,7,15,7,10,8,12,10,4,3,3,6,6,3,null,5,4,9,3,11],"Cardiff":[7,2,6,7,8,5,4,5,8,2,5,5,6,3,8,7,12,11,7,14,11,6,6,3,7,4,3,4,10,8,6,5,17,12,5,7,5,9,7,1,4,4,6,6,3,11,5,6,7,10,7,8,11,4,22,4,11,8,8,7,8,8,13,12,10,8,6,8,12,3,5,3,9,4,8,9,4,15,6,7,2,7,0,1,10,5,6,9,7,6,8,5,2,11,7,11,7,5,5,4,5,4,5,6,9,6,5,1,6,3,null,2,7,5,4,6],"Stockport":[4,3,2,1,0,0,5,1,1,1,0,3,1,2,4,1,2,0,1,0,0,3,0,1,1,0,4,1,4,1,2,2,2,1,0,0,0,1,0,0,0,0,2,1,0,1,2,1,2,0,0,3,0,1,2,0,0,3,3,0,1,0,0,2,2,1,3,1,0,0,0,4,0,2,1,1,0,1,1,1,1,2,2,0,1,1,0,3,2,1,1,2,0,1,1,1,1,0,3,1,3,0,1,1,0,3,0,1,0,0,null,0,2,5,1,3],"Salford":[0,0,1,0,2,1,1,2,0,2,1,0,0,0,2,2,3,3,1,1,3,0,1,0,2,2,2,0,2,0,3,0,2,1,3,1,0,0,0,2,0,0,2,5,4,1,2,1,4,3,2,2,2,1,1,2,2,3,2,0,3,1,0,3,2,0,2,0,0,2,3,9,5,3,6,3,1,2,4,4,1,3,2,2,1,1,2,1,4,0,0,2,4,0,0,4,6,1,1,4,3,0,1,1,1,1,6,0,0,1,null,5,3,null,1,8]}}}};
+const STILL = /still/.test(location.hash); if (STILL) document.documentElement.classList.add('still');
+
+/* ---------- state ---------- */
+let S = {page:'result', scen:'dev', cad:'monthly', theme:'auto', range:null, table:false, rule:false};
+try{ Object.assign(S, JSON.parse(localStorage.getItem('itmc-design')||'{}')); }catch(e){}
+const h = location.hash.slice(1);
+if (h){ S.page = /home/.test(h)?'home':'result'; S.theme = /dark/.test(h)?'dark':/light/.test(h)?'light':S.theme;
+  S.scen = /police/.test(h)?'police':'dev'; S.cad = /quarterly/.test(h)?'quarterly':'monthly'; }
+S.table = false; S.rule = false; S.range = null;
+const save = () => { try{ localStorage.setItem('itmc-design', JSON.stringify({page:S.page,scen:S.scen,cad:S.cad,theme:S.theme})); }catch(e){} };
+
+/* ---------- data helpers ---------- */
+const MIN = 30;
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const QL = ['January–March','April–June','July–September','October–December'], QS = ['Jan–Mar','Apr–Jun','Jul–Sep','Oct–Dec'];
+const ALL_WITHHELD = new Set(['Mar-26','2026Q1']);
+const fmt = n => n == null ? '–' : Math.round(n).toLocaleString('en-GB');
+const sc = s => s.charAt(0) + s.slice(1).toLowerCase().replace(/\bit\b/g,'IT');
+function pl(p, k){
+  if (/Q/.test(p)){ const y=p.slice(0,4), q=+p.slice(5); return k==='long'?`${QL[q-1]} ${y}`:k==='mid'?`${QS[q-1]} ${y}`:k==='axis'?y:`Q${q} ${y}`; }
+  const [m,yy]=p.split('-'), i=MON.indexOf(m), y=2000+ +yy; return k==='long'?`${MONL[i]} ${y}`:`${m} ${y}`;
+}
+const why = p => ALL_WITHHELD.has(p) ? `${pl(p,'mid')}: ONS withheld all figures after a data-supply problem.` : `${pl(p,'mid')}: ONS withheld this figure over data quality.`;
+function change(a, b){
+  if (a == null || b == null) return {s:'missing'};
+  if (b === 0) return {s:'zero', abs:a-b};
+  if (a < MIN || b < MIN) return {s:'small', abs:a-b};
+  return {s:'ok', abs:a-b, pct:(a-b)/b*100};
+}
+function metrics(v, P, cad){
+  let li = v.length-1; while (li>=0 && v[li]==null) li--;
+  const lag = cad==='M'?12:4, win = cad==='M'?60:20;
+  const m = {li, latest:v[li], period:P[li], newest:P[v.length-1], prevP:P[li-1], yaP:P[li-lag], ya:v[li-lag]};
+  m.prev = change(v[li], v[li-1] ?? null); m.yoy = change(v[li], v[li-lag] ?? null);
+  const w = v.slice(Math.max(0,li-win+1), li+1).filter(x=>x!=null);
+  m.avg = w.length >= win*.75 ? w.reduce((a,b)=>a+b,0)/w.length : null;
+  m.vsAvg = m.avg==null ? {s:'missing'} : change(v[li], m.avg);
+  if (cad==='M'){ const a=v.slice(li-2,li+1), b=v.slice(li-14,li-11);
+    m.roll = a.length===3 && b.length===3 && !a.concat(b).some(x=>x==null) ? change(a.reduce((x,y)=>x+y), b.reduce((x,y)=>x+y)) : {s:'missing'};
+    m.rollFrom = P[li-2]; }
+  const basis = cad==='M' && m.roll.s==='ok' ? m.roll : m.yoy;
+  m.basis = basis===m.yoy ? 'yoy' : 'roll';
+  m.trend = basis.s!=='ok' ? (basis.s==='small'?'small':'na') : basis.pct>=10?'up':basis.pct<=-10?'down':'flat';
+  return m;
+}
+const TREND = {up:['▲','Growing'], down:['▼','Shrinking'], flat:['►','Steady'], small:['·','Too few to tell'], na:['·','Not enough data']};
+const dirOf = c => c.s!=='ok' ? 'na' : Math.abs(c.pct)<.05 ? 'flat' : c.pct>0 ? 'up' : 'down';
+
+function model(){
+  const s = D.scen[S.scen], M = S.cad==='monthly';
+  const vm = {searched: s.short, short: M ? sc(s.name3) : s.short, occ: M ? sc(s.name3) : s.name, code: M ? s.code3 : s.code, place:'Manchester', region:'North West',
+    cad: M?'M':'Q', P: M?D.months:D.quarters, v: M?s.m3:s.q,
+    banner: M ? `Monthly figures for Manchester only exist for broader job groups, so this shows <b>${sc(s.name3).toLowerCase()}</b> (SOC ${s.code3}), which includes ${s.short.toLowerCase()}. Switch to <b>Quarterly</b> on the chart for ${s.short.toLowerCase()} only.` : null};
+  vm.m = metrics(vm.v, vm.P, vm.cad);
+  const c = M ? s.citiesM3 : s.citiesQ, lag = M?13:5;
+  const sum3 = (x,end) => { const a = x.slice(end-3,end); return a.length===3 && !a.some(v=>v==null) ? a.reduce((p,q)=>p+q) : null; };
+  vm.places = Object.entries(c).map(([n,x])=>({n:n.replace(', City of','').replace(' City',''), me:n==='Manchester', v:x[x.length-1],
+    cur: M ? sum3(x,x.length) : x[x.length-1], ya: M ? sum3(x,x.length-12) : x[x.length-lag]}))
+    .sort((a,b)=>(b.v??-1)-(a.v??-1)).slice(0,6);
+  return vm;
+}
+
+/* ---------- drawing helpers ---------- */
+function reveal(svg, W, x0, done){
+  const r = svg.querySelector('.rv'); if (!r) return;
+  if (STILL || matchMedia('(prefers-reduced-motion: reduce)').matches){ r.setAttribute('width', W); done && done(); return; }
+  const t0 = performance.now(), dur = 1400;
+  r.setAttribute('width', x0);
+  const tick = t => { const k = Math.min(1,(t-t0)/dur), e = 1-Math.pow(1-k,3); r.setAttribute('width', x0 + e*(W-x0)); if (k<1) requestAnimationFrame(tick); else done && done(); };
+  requestAnimationFrame(tick);
+}
+function segments(vals){ const out=[]; let c=[]; vals.forEach((v,i)=>{ if(v==null){ if(c.length) out.push(c); c=[]; } else c.push(i); }); if(c.length) out.push(c); return out; }
+function sparkSVG(vals){
+  const W=300, H=90, p=6, n=vals.length, max=Math.max(...vals.filter(v=>v!=null))*1.08;
+  const x=i=>p+i*(W-2*p)/(n-1), y=v=>H-p-v/max*(H-2*p);
+  let s='';
+  vals.forEach((v,i)=>{ if(v==null) s+=`<rect x="${x(i)-5}" y="${p}" width="10" height="${H-2*p}" fill="url(#sh)"/>`; });
+  segments(vals).forEach(sg=>{ const d=sg.map((i,k)=>`${k?'L':'M'}${x(i).toFixed(1)} ${y(vals[i]).toFixed(1)}`).join(' ');
+    s += sg.length>1 ? `<path d="${d} L${x(sg.at(-1))} ${H-p} L${x(sg[0])} ${H-p}Z" fill="var(--fill)"/><path d="${d}" fill="none" stroke="var(--line)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>` : `<circle cx="${x(sg[0])}" cy="${y(vals[sg[0]])}" r="2.5" fill="var(--line)"/>`; });
+  const li = n-1-[...vals].reverse().findIndex(v=>v!=null);
+  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><defs><pattern id="sh" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="var(--missing)" stroke-width="1.6" opacity=".6"/></pattern><clipPath id="spc"><rect class="rv" x="0" y="-10" width="${W}" height="${H+20}"/></clipPath></defs>
+    <g clip-path="url(#spc)">${s}</g><circle class="enddot" cx="${x(li)}" cy="${y(vals[li])}" r="5" fill="var(--line)" stroke="var(--surface)" stroke-width="2" style="transition:opacity .3s"/></svg>`;
+}
+
+/* ---------- views ---------- */
+function header(result){
+  const s = D.scen[S.scen], who = s.short;
+  return `<header class="hdr"><div class="wrap"><a class="logo" href="#" data-go="home"><span class="mk" aria-hidden="true">▲▼</span>isthemarket<i>cooked</i></a>
+    ${result ? `<button class="pillbtn" data-go="home" aria-label="Change search"><span>${who} · Manchester</span><span aria-hidden="true">✎</span></button>` : `<a class="pillbtn" href="#" data-noop style="text-decoration:none"><span>About the data</span></a>`}</div></header>`;
+}
+const footer = () => `<footer class="foot"><div class="wrap"><p>Source: Office for National Statistics, Labour demand volumes by SOC 2020, UK. Published 25 September 2026. Official statistics in development. Contains public sector information licensed under the Open Government Licence v3.0.</p><p>Trend words and averages are our reading of the ONS figures, not an ONS measure. Design mockup with real figures.</p></div></footer>`;
+
+function home(){
+  const u = D.uk_total, n = u.length, yoy = change(u[n-1], u[n-13]), d = dirOf(yoy);
+  const mv = (arr, dir) => arr.slice(0,4).map(([nm,p])=>`<li><span>${nm}</span><span class="num" style="color:var(--${dir});font-weight:500;white-space:nowrap">${dir==='up'?'▲':'▼'} ${Math.abs(p).toFixed(0)}%<span class="sr"> ${dir==='up'?'more':'fewer'} adverts</span></span></li>`).join('');
+  return `${header(false)}<main class="wrap">
+    <section class="hero">
+      <div class="ink" style="--i:0"><h1>Is the market cooked?</h1><p class="lede">See how many jobs like yours are being advertised where you live, and whether that’s going up or down. Real ONS figures, free.</p></div>
+      <form class="sform ink" style="--i:1" id="sform" autocomplete="off">
+        <div class="field"><label for="q-job">Job</label><input id="q-job" placeholder="Software developer" role="combobox" aria-expanded="false" aria-controls="s-job" aria-autocomplete="list"><ul class="sugg" id="s-job" role="listbox" hidden></ul></div>
+        <div class="field"><label for="q-where">Where</label><input id="q-where" placeholder="Manchester" role="combobox" aria-expanded="false" aria-controls="s-where" aria-autocomplete="list"><ul class="sugg" id="s-where" role="listbox" hidden></ul></div>
+        <button class="btn" type="submit">Check the market</button>
+      </form>
+      <p class="toast" id="toast" role="status"></p>
+      <div class="try ink" style="--i:2"><span>Try</span><button data-pick="dev">Software developers in Manchester</button><button data-pick="police">Senior police officers in Manchester</button></div>
+    </section>
+    <section class="uk" aria-label="UK overview">
+      <div class="card ink" style="--i:3"><p class="lbl">UK, all jobs · ${pl(D.months[n-1],'long')}</p><p class="big num">${fmt(u[n-1])}</p><p class="muted" style="font-size:14.5px">new online job adverts</p>
+        <p style="margin-top:12px"><span class="chip ${d}">${d==='up'?'▲':'▼'} ${Math.abs(yoy.pct).toFixed(1)}% vs ${pl(D.months[n-13],'short')}</span></p></div>
+      <div class="card ink" style="--i:4"><h3>Rising fastest</h3><ol>${mv(D.growth,'up')}</ol></div>
+      <div class="card ink" style="--i:5"><h3>Falling fastest</h3><ol>${mv(D.decline,'down')}</ol></div>
+      <p class="muted ink" style="--i:6;font-size:13px;grid-column:1/-1">Rising and falling: UK, Jun–Aug 2026 compared with Jun–Aug 2025, jobs with at least 1,500 adverts a year earlier.</p>
+    </section></main>${footer()}`;
+}
+
+function result(){
+  const vm = model(), m = vm.m, unitP = vm.cad==='M'?'month':'quarter';
+  const ranges = vm.cad==='M' ? ['6M','1Y','3Y','5Y','All'] : ['1Y','3Y','5Y','All'];
+  if (!ranges.includes(S.range)) S.range = vm.cad==='M' ? '1Y' : '3Y';
+  // Monthly: compare the last 3 months with the same 3 months a year earlier (ONS advises against single-month changes)
+  const useRoll = vm.cad==='M' && m.roll.s==='ok', hc = useRoll ? m.roll : m.yoy, yd = dirOf(hc);
+  const span = useRoll ? `${pl(m.rollFrom,'short').slice(0,3)}–${pl(m.period,'short').slice(0,3)}: ` : '';
+  const heroChip = hc.s==='ok' ? `<span class="chip ${yd}"><span aria-hidden="true">${TREND[yd==='na'?'na':yd][0]}</span>${span}${Math.abs(hc.pct).toFixed(1)}% ${hc.pct<0?'fewer':'more'} than a year ago</span>`
+    : `<span class="chip na">${hc.s==='small'?'Too few adverts to compare':'No figure from a year ago'}</span>`;
+  const spark = vm.v.slice(-(vm.cad==='M'?24:12));
+  const cardVal = (c, words) => c.s==='ok' ? `<span class="val ${dirOf(c)}"><span aria-hidden="true">${c.pct<0?'▼':'▲'}</span> ${Math.round(Math.abs(c.pct))}% ${c.pct<0?words[1]:words[0]}</span>` : `<span class="val na">${c.s==='small'?'Too few':'No figure'}</span>`;
+  const t = TREND[m.trend];
+  const basisTxt = m.basis==='roll' ? 'the last 3 months with the same 3 months a year earlier' : `the latest ${unitP} with the same ${unitP} a year earlier`;
+  return `${header(true)}<main class="wrap">
+    <section class="rhead ink" style="--i:0"><h1>${vm.searched} in ${vm.place}</h1>
+      <p class="sub">${vm.occ} · SOC ${vm.code} · ${vm.place}, ${vm.region}</p>
+      ${vm.banner?`<p class="banner">${vm.banner}</p>`:''}
+      ${m.newest!==m.period?`<p class="banner">No figure yet for ${pl(m.newest,'long')}. Showing the latest available.</p>`:''}</section>
+
+    <section class="card herobox ink" style="--i:1" aria-label="Headline">
+      <div><p class="bignum num">${fmt(m.latest)}</p><p class="unit">new online job adverts${vm.cad==='M'?` for ${vm.short.toLowerCase()}`:''} · ${pl(m.period,'long')}</p>${heroChip}</div>
+      <div class="spark">${sparkSVG(spark)}<div class="cap"><span>${pl(vm.P[vm.P.length-spark.length],'short')}</span><span>${pl(m.period,'short')}</span></div></div>
+    </section>
+
+    <section class="cards" aria-label="Comparisons">
+      <div class="card ink" style="--i:2"><span class="lbl">5-year average</span>${cardVal(m.vsAvg,['above','below'])}<span class="sub">${m.avg?`Average ${fmt(m.avg)} a ${unitP}`:'Not enough history'}</span></div>
+      <div class="card ink" style="--i:3"><span class="lbl">Last ${unitP}</span>${cardVal(m.prev,['more','fewer'])}<span class="sub">${m.prev.s==='missing'?`${pl(m.prevP,'mid')} withheld by ONS`:m.prev.s==='ok'?`${fmt(m.latest-m.prev.abs)} in ${pl(m.prevP,'mid')}`:''}</span></div>
+      <div class="card ink" style="--i:4"><span class="lbl">Trend</span><span class="val ${['up','down','flat'].includes(m.trend)?m.trend:'na'}"><span aria-hidden="true">${t[0]}</span> ${t[1]}</span><button class="tip" data-act="rule" aria-expanded="${S.rule}">How we decide</button></div>
+    </section>
+    <p class="rulebox" id="rulebox" ${S.rule?'':'hidden'}>We compare ${basisTxt}. Up 10% or more is <b>Growing</b>, down 10% or more is <b>Shrinking</b>, in between is <b>Steady</b>. Under ${MIN} adverts we don’t call a trend. This is our reading of ONS data, not an ONS measure.</p>
+
+    <section class="sec" aria-labelledby="ch-h">
+      <div class="sechead"><h2 id="ch-h">Adverts per ${unitP}</h2><div class="tabs" role="group" aria-label="Show figures by"><button data-cad="monthly" aria-pressed="${vm.cad==='M'}">Monthly</button><button data-cad="quarterly" aria-pressed="${vm.cad==='Q'}">Quarterly</button></div></div>
+      <div class="sechead" style="justify-content:flex-end"><div class="tabs" role="group" aria-label="Time range">${ranges.map(r=>`<button data-range="${r}" aria-pressed="${S.range===r}">${r}</button>`).join('')}</div></div>
+      <div class="card chartcard" id="chart"></div>
+      <button class="linkbtn" data-act="table" aria-expanded="${S.table}">${S.table?'Hide':'Show'} the numbers</button><div id="ctable"></div>
+    </section>
+
+
+    <section class="sec"><div class="sechead"><h2>${vm.short} in other places</h2><span class="muted" style="font-size:13.5px">${pl(m.period,'mid')}</span></div>
+      <ol class="card places">${vm.places.map(p=>{ const c=change(p.cur,p.ya), d=dirOf(c);
+        return `<li class="${p.me?'me':''}"><span>${p.n}</span><span class="num">${p.v==null?'<span class="muted">No figure</span>':fmt(p.v)}</span><span class="chg ${d}">${c.s==='ok'?`${c.pct<0?'▼':'▲'} ${Math.abs(c.pct).toFixed(0)}%<span class="sr"> ${c.pct<0?'fewer':'more'} than a year ago</span>`:c.s==='small'?'too few':'–'}</span></li>`; }).join('')}</ol>
+      <p class="muted" style="font-size:13px;margin-top:8px">${vm.cad==='M' ? `Change compares ${pl(m.rollFrom,'short').slice(0,3)}–${pl(m.period,'short').slice(0,3)} with the same 3 months a year earlier.` : 'Change is compared with the same quarter a year earlier.'}</p></section>
+
+    <details class="card about"><summary>About this data</summary>
+      <dl><div><dt>Source</dt><dd>Office for National Statistics</dd></div><div><dt>Measure</dt><dd>New online job adverts</dd></div><div><dt>Latest figure</dt><dd>${pl(m.period,'long')}</dd></div><div><dt>Published</dt><dd>25 September 2026</dd></div></dl>
+      <ul><li>An advert isn’t the same as a job. ONS removes duplicates it can detect, but some roles are still advertised more than once.</li><li>Some jobs are never advertised online.</li><li>Gaps mean ONS has no reliable figure. They never mean zero adverts.</li><li>ONS says short-term changes since November 2025 are less reliable; compare over longer periods.</li></ul>
+    </details>
+  </main>${footer()}`;
+}
+
+/* ---------- main chart ---------- */
+function drawChart(){
+  const box = document.getElementById('chart'); if (!box) return;
+  const vm = model();
+  const take = {'6M':6,'1Y':vm.cad==='M'?12:4,'3Y':vm.cad==='M'?36:12,'5Y':vm.cad==='M'?60:20,'All':1e9}[S.range];
+  const n = vm.v.length, st = Math.max(0, n-take), vals = vm.v.slice(st), P = vm.P.slice(st);
+  const W = Math.max(280, box.clientWidth-16), H = W<560 ? 230 : 300;
+  const pl0 = 46, pr = 16, pt = 18, pb = 30, iw = W-pl0-pr, ih = H-pt-pb;
+  const vmax = Math.max(...vals.filter(v=>v!=null), vm.m.avg||0, 1)*1.08;
+  const mag = Math.pow(10, Math.floor(Math.log10(vmax))), step = [.1,.2,.25,.5,1,2,2.5,5,10].map(k=>k*mag).find(s=>vmax/s<=4);
+  const ymax = Math.ceil(vmax/step)*step, N = vals.length;
+  const x = i => pl0 + (N===1 ? iw/2 : i*iw/(N-1)), y = v => pt + ih - v/ymax*ih, cw = Math.max(6, iw/Math.max(1,N-1)*.8);
+  let g = '';
+  for (let t=0; t<=ymax+1e-9; t+=step) g += `<line x1="${pl0}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)"/><text x="${pl0-8}" y="${y(t)+4}" text-anchor="end" font-size="12" fill="var(--ink-3)">${fmt(t)}</text>`;
+  vals.forEach((v,i)=>{ if (v==null) g += `<rect x="${x(i)-cw/2}" y="${pt}" width="${cw}" height="${ih}" fill="url(#hatch)"/>`; });
+  const yr = P.map((p,i)=>({p,i})).filter(o=>/Q1$/.test(o.p)||/^Jan/.test(o.p)), ev = Math.ceil(yr.length/Math.max(1,Math.floor(iw/64)));
+  (yr.length>=2 ? yr.filter((o,k)=>k%ev===0).map(o=>({i:o.i,t:/Q/.test(o.p)?o.p.slice(0,4):String(2000+ +o.p.slice(4))})) : P.map((p,i)=>({i,t:pl(p,'short')})).filter((o,k,a)=>a.length<=6||k%Math.ceil(a.length/5)===0))
+    .forEach(o => g += `<text x="${x(o.i)}" y="${H-9}" text-anchor="middle" font-size="12" fill="var(--ink-3)">${o.t}</text>`);
+  if (vm.m.avg) g += `<line x1="${pl0}" x2="${W-pr}" y1="${y(vm.m.avg)}" y2="${y(vm.m.avg)}" stroke="var(--ink-3)" stroke-width="1.4" stroke-dasharray="5 4"/><text x="${pl0+6}" y="${y(vm.m.avg)-6}" font-size="12" fill="var(--ink-2)">5-year average ${fmt(vm.m.avg)}</text>`;
+  let L = '';
+  segments(vals).forEach(sg=>{ const d = sg.map((i,k)=>`${k?'L':'M'}${x(i).toFixed(1)} ${y(vals[i]).toFixed(1)}`).join(' ');
+    L += sg.length>1 ? `<path d="${d} L${x(sg.at(-1))} ${y(0)} L${x(sg[0])} ${y(0)}Z" fill="var(--fill)"/><path d="${d}" fill="none" stroke="var(--line)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` : `<circle cx="${x(sg[0])}" cy="${y(vals[sg[0]])}" r="3.5" fill="var(--line)"/>`; });
+  const li = N-1-[...vals].reverse().findIndex(v=>v!=null);
+  const label = `Chart of new online job adverts per ${vm.cad==='M'?'month':'quarter'} from ${pl(P[0],'short')} to ${pl(P[N-1],'short')}. Latest ${fmt(vm.m.latest)}. Use the arrow keys to read each value.`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${label}" tabindex="0">
+    <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--surface)"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--missing)" stroke-width="2" opacity=".55"/></pattern>
+    <clipPath id="mc"><rect class="rv" x="0" y="0" width="${W}" height="${H}"/></clipPath></defs>
+    ${g}<g clip-path="url(#mc)">${L}<circle cx="${x(li)}" cy="${y(vals[li])}" r="5.5" fill="var(--line)" stroke="var(--surface)" stroke-width="2.5"/></g>
+    <line id="xh" y1="${pt}" y2="${pt+ih}" stroke="var(--ink-2)" visibility="hidden"/></svg>
+    <div class="ctip" id="ctip" hidden></div>
+    <div class="legend"><span><i class="lg-gap"></i>No data (withheld by ONS)</span>${vm.m.avg?'<span><i class="lg-avg"></i>5-year average</span>':''}</div>`;
+  // callout on the most recent gap (6A + 6D)
+  const gi = vals.lastIndexOf(null);
+  if (gi >= 0 && box.clientWidth < 560){
+    box.querySelector('.legend span').innerHTML = '<i class="lg-gap"></i>' + why(P[gi]);
+  } else if (gi >= 0){
+    const c = document.createElement('div'); c.className = 'callout'; c.textContent = why(P[gi]); box.appendChild(c);
+    const sx = box.querySelector('svg').clientWidth / W, gx = x(gi)*sx + 8;
+    const left = Math.max(8, Math.min(gx - c.offsetWidth - 10, box.clientWidth - c.offsetWidth - 8));
+    c.style.left = (gx > c.offsetWidth + 30 ? left : Math.min(gx + 14, box.clientWidth - c.offsetWidth - 8)) + 'px';
+    c.style.top = (pt*sx + 12) + 'px';
+  }
+  const svg = box.querySelector('svg'); reveal(svg, W, pl0);
+  const tip = box.querySelector('#ctip'), xh = box.querySelector('#xh'); let at = li;
+  const show = i => { at = Math.max(0, Math.min(N-1, i)); const k = svg.clientWidth/W;
+    xh.setAttribute('x1', x(at)); xh.setAttribute('x2', x(at)); xh.setAttribute('visibility','visible');
+    tip.hidden = false; tip.style.left = Math.min(Math.max(x(at)*k+8, 80), box.clientWidth-80)+'px'; tip.style.top = ((vals[at]==null?pt+ih/2:y(vals[at]))*k+14)+'px';
+    tip.textContent = `${pl(P[at],'short')} · ${vals[at]==null?'No data':fmt(vals[at])+' adverts'}`; };
+  const hide = () => { tip.hidden = true; xh.setAttribute('visibility','hidden'); };
+  svg.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(); show(Math.round(((e.clientX-r.left)/r.width*W - pl0)/iw*(N-1))); });
+  svg.addEventListener('pointerleave', hide); svg.addEventListener('blur', hide); svg.addEventListener('focus', () => show(at));
+  svg.addEventListener('keydown', e => { if (e.key==='ArrowLeft'){show(at-1);e.preventDefault();} if (e.key==='ArrowRight'){show(at+1);e.preventDefault();} });
+  document.getElementById('ctable').innerHTML = S.table ? `<div class="card tablewrap" style="padding:8px 16px"><table class="dtable"><thead><tr><th scope="col">Period</th><th scope="col" style="text-align:right">Adverts</th></tr></thead><tbody>${P.map((p,i)=>`<tr><td>${pl(p,'long')}</td><td class="n num">${vals[i]==null?'No data':fmt(vals[i])}</td></tr>`).reverse().join('')}</tbody></table></div>` : '';
+}
+
+/* ---------- search ---------- */
+function wireSearch(){
+  const occ = D.occupations.map(([c,n])=>({c,n}));
+  const setup = (inp, list, src, show) => {
+    let items=[], sel=-1;
+    const close = () => { list.hidden=true; inp.setAttribute('aria-expanded','false'); sel=-1; };
+    const draw = () => { list.innerHTML = items.map((it,i)=>`<li role="option" id="${list.id}-${i}" aria-selected="${i===sel}">${show(it)}</li>`).join(''); list.hidden=!items.length; inp.setAttribute('aria-expanded',String(!!items.length)); };
+    const pick = it => { inp.value = it.n||it; inp.dataset.code = it.c||''; close(); };
+    inp.addEventListener('input', () => { const q = inp.value.trim().toLowerCase(); items = q.length<2?[]:src(q).slice(0,6); sel=-1; draw(); });
+    inp.addEventListener('keydown', e => { if (list.hidden) return;
+      if (e.key==='ArrowDown'){sel=Math.min(items.length-1,sel+1);draw();e.preventDefault();}
+      if (e.key==='ArrowUp'){sel=Math.max(0,sel-1);draw();e.preventDefault();}
+      if (e.key==='Enter'&&sel>=0){pick(items[sel]);e.preventDefault();}
+      if (e.key==='Escape') close(); });
+    list.addEventListener('mousedown', e => { const li = e.target.closest('li'); if (li){ pick(items[+li.id.split('-').pop()]); e.preventDefault(); } });
+    inp.addEventListener('blur', () => setTimeout(close,120));
+  };
+  setup(document.getElementById('q-job'), document.getElementById('s-job'), q=>occ.filter(o=>o.n.toLowerCase().includes(q)||o.c.startsWith(q)), o=>`${o.n}<small>SOC ${o.c}</small>`);
+  setup(document.getElementById('q-where'), document.getElementById('s-where'), q=>D.places.filter(p=>p.toLowerCase().includes(q)), p=>p);
+  document.getElementById('sform').addEventListener('submit', e => {
+    e.preventDefault();
+    const j = document.getElementById('q-job'), w = document.getElementById('q-where').value.trim().toLowerCase(), t = document.getElementById('toast');
+    const code = j.dataset.code || (/software|program|develop/i.test(j.value)?'2134':/police/i.test(j.value)?'1162':'');
+    if (!j.value.trim()){ t.textContent='Pick a job to check.'; j.focus(); return; }
+    if ((code==='2134'||code==='1162') && (!w||w==='manchester')){ S.scen = code==='2134'?'dev':'police'; S.page='result'; render(); scrollTo(0,0); return; }
+    t.textContent = 'This mockup only has software developers and senior police officers in Manchester. The real site covers all 412 jobs and 342 areas.';
+  });
+}
+
+/* ---------- render ---------- */
+function bar(){
+  const seg = (id,key,opts) => document.getElementById(id).innerHTML = Object.entries(opts).map(([k,l])=>`<button data-k="${key}" data-v="${k}" aria-pressed="${S[key]===k}">${l}</button>`).join('');
+  seg('m-page','page',{home:'Home',result:'Result'}); seg('m-scen','scen',{dev:'Software devs',police:'Small numbers'});
+  seg('m-theme','theme',{auto:'Auto',light:'Light',dark:'Dark'});
+  if (S.theme==='auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', S.theme);
+}
+function render(){
+  save(); bar();
+  const app = document.getElementById('app');
+  app.innerHTML = S.page==='home' ? home() : result();
+  if (S.page==='home') wireSearch();
+  else {
+    drawChart();
+    const sp = app.querySelector('.spark svg'), dot = sp && sp.querySelector('.enddot');
+    if (sp){ if (!STILL && !matchMedia('(prefers-reduced-motion: reduce)').matches) dot.style.opacity = 0; reveal(sp, 300, 0, () => dot.style.opacity = 1); }
+  }
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button,a'); if (!b) return;
+  if (b.dataset.k){ S[b.dataset.k]=b.dataset.v; if (b.dataset.k==='cad') S.range=null; render(); return; }
+  if (b.dataset.go){ e.preventDefault(); S.page=b.dataset.go; render(); scrollTo(0,0); return; }
+  if (b.hasAttribute('data-noop')){ e.preventDefault(); return; }
+  if (b.dataset.pick){ S.scen=b.dataset.pick; S.page='result'; render(); scrollTo(0,0); return; }
+  if (b.dataset.cad){ if (S.cad!==b.dataset.cad){ S.cad=b.dataset.cad; S.range=null; const y=scrollY; render(); scrollTo(0,y); } return; }
+  if (b.dataset.range){ S.range=b.dataset.range; document.querySelectorAll('[data-range]').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); drawChart(); return; }
+  if (b.dataset.act==='table'){ S.table=!S.table; b.textContent=(S.table?'Hide':'Show')+' the numbers'; b.setAttribute('aria-expanded',S.table); drawChart(); return; }
+  if (b.dataset.act==='rule'){ S.rule=!S.rule; b.setAttribute('aria-expanded',S.rule); document.getElementById('rulebox').hidden=!S.rule; return; }
+});
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawChart, 120); });
+render();
+</script>

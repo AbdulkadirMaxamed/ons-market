@@ -1,0 +1,17 @@
+/**
+ * Cloudflare Workers config. Free plan; see docs/01-architecture.md §8.
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "isthemarketcooked",
+	"compatibility_date": "2026-10-06",
+	"main": "./workers/app.ts",
+	// Static files (JS, CSS, fonts and the exported JSON data shards in public/data/) are served for free.
+	// Loaders read the shards through this binding instead of fetching over the network.
+	"assets": { "binding": "ASSETS" },
+	"observability": {
+		"enabled": true
+	},
+	"upload_source_maps": true
+}

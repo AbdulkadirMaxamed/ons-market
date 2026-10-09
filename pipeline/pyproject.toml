@@ -1,0 +1,19 @@
+[project]
+name = "ons-pipeline"
+version = "0.1.0"
+description = "Imports the ONS labour demand workbook into SQLite and exports JSON for the website"
+requires-python = ">=3.12"
+dependencies = ["openpyxl>=3.1"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ons"]
