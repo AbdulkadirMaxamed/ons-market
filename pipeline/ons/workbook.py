@@ -236,6 +236,30 @@ class Workbook:
         latest = parse_period(header[-1], "M", "Table 1 header")
         return ReleaseInfo(label, published, latest)
 
+    def data_issues(self) -> list[tuple[str, str]]:
+        """(heading, text) for each "Data issue - …" section of the cover sheet, in workbook order.
+
+        A section runs until the next data issue or the next short heading line (e.g. "User guide")."""
+        if "Cover sheet" not in self._wb.sheetnames:
+            raise WorkbookError("No 'Cover sheet' worksheet")
+        issues: list[tuple[str, list[str]]] = []
+        current: list[str] | None = None
+        for (cell,) in self._wb["Cover sheet"].iter_rows(max_col=1, values_only=True):
+            if not isinstance(cell, str) or not cell.strip():
+                continue
+            line = cell.strip()
+            if re.match(r"Data issue\s*-", line, re.I):
+                current = []
+                issues.append((re.sub(r"\s+", " ", line), current))
+            elif current is not None and len(line) < 60 and not line.endswith((".", ":")):
+                current = None  # next section heading
+            elif current is not None:
+                current.append(line)
+        for heading, text in issues:
+            if not text:
+                raise WorkbookError(f"Cover sheet: {heading!r} has no text under it")
+        return [(h, "\n\n".join(t)) for h, t in issues]
+
     def _header(self, key: str) -> tuple:
         ws = self._wb[self._sheets[key]]
         return next(ws.iter_rows(min_row=HEADER_ROW, max_row=HEADER_ROW, values_only=True))

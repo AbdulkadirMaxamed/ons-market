@@ -27,16 +27,16 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [ ] Chart: gaps for missing data, notice bands, range tabs, table view, keyboard support
 - [ ] Ink-in entrance and line-drawing animation for sparkline and chart (reduced-motion safe)
 - [ ] Light and dark theme
-- [ ] Tests: metrics (pytest), formatting and loaders (Vitest)
+- [~] Tests: metrics (pytest, done: 34), formatting and loaders (Vitest)
 
 ## Phase 4: real data
 - [x] Workbook structure validator (fails loudly on layout change)
 - [x] Parse Tables 1, 2, 3, 4, 5; `[x]` → missing (lookup Tables 6–7 come with S-002)
 - [x] Transactional upsert with revision log and import log; idempotent re-import
 - [x] Importer tests: missing values, duplicates, revisions, same-release re-import, malformed workbook, new layout, rollback (14 passing)
-- [ ] Metrics: latest, previous-period and year-on-year change, 3-month rolling, 5-year average, 12-month high/low, percentile, trend word
-- [ ] Minimum-volume rule for percentages
-- [ ] JSON shard export
+- [x] Metrics: latest, previous-period and year-on-year change, 3-month rolling, 5-year average, 12-month high/low, percentile, trend word (`pipeline/ons/metrics.py`)
+- [x] Minimum-volume rule for percentages (30)
+- [x] JSON shard export: `pnpm data:export` (`meta`, `search`, `overview`, `occupation/{soc4}`, `group/{soc3}`; 8 tests)
 - [x] Import the September 2026 release and spot-check values against the spreadsheet
 
 ## Approved suggestions
@@ -48,6 +48,7 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [ ] S-007 · Share of all adverts in the area, and how it has changed
 - [ ] S-008 · "Cooked meter" wording (Not cooked / Simmering / Cooked) shown next to the plain trend word
 - [x] S-009 · Ticker-triangle (▲▼) logo and favicon
+- [~] S-010 · Missing figures labelled by cause with ONS's reason (8A · 9C · 10A · 11D). Data side done (`notices.toml` checked on import, ONS text exported, 13 tests); display comes with the result page
 
 ## Phase 5: polish
 - [ ] Occupation and location ranking pages (paginated)

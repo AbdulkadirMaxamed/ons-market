@@ -95,9 +95,12 @@ Until data has been imported and exported, the homepage tells you that no ONS da
 ```bash
 pnpm data:import data/raw/ons-2026-08.xlsx
 pnpm data:status   # recent imports and their results
+pnpm data:export   # write the JSON data files the site reads (public/data/)
 ```
 
 The importer checks the workbook's layout before it writes anything. If ONS changes a column, a period heading or a value format, the importer stops, names the exact cell (for example `Table 2!F6`) and leaves the database unchanged. Re-importing the same file does nothing.
+
+If ONS has added a new data issue to the workbook's cover sheet, the import stops and names it. Add a short entry for it to `pipeline/notices.toml` (which periods it covers, why, and whether the data was not collected, withheld or estimated), then import again. This is how every gap on the site gets ONS's reason.
 
 > Raw workbooks and the SQLite database are gitignored. They never go into the repository or the deployed site.
 
@@ -111,6 +114,7 @@ The importer checks the workbook's layout before it writes anything. If ONS chan
 | `pnpm deploy` | Build and deploy to Cloudflare Workers |
 | `pnpm typecheck` | Generate types and run TypeScript |
 | `pnpm data:import <file>` | Import an ONS workbook into SQLite |
+| `pnpm data:export` | Calculate the comparisons and write `public/data/*.json` |
 | `pnpm data:status` | Show recent imports |
 | `pnpm test:pipeline` | Run the pipeline tests |
 
@@ -124,7 +128,10 @@ public/              static assets (logo, favicons, exported data/)
 pipeline/            Python data pipeline
   ons/workbook.py      reads and validates the ONS workbook
   ons/importer.py      transactional upsert into SQLite
+  ons/metrics.py       comparisons, trend word, small-numbers rule
+  ons/export.py        SQLite → JSON data files
   ons/schema.sql       database schema
+  notices.toml         why figures are missing or estimated, per ONS data issue
   tests/               pytest suite
 docs/                architecture, design and workbook profile
 mockups/             design explorations and the final reference design

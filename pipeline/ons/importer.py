@@ -1,7 +1,8 @@
 """Import one ONS workbook into SQLite (docs/01-architecture.md §7).
 
-hash → skip if already imported → back up DB → parse and validate into a staging table → upsert
-observations, logging every revised value → record the import. It all happens in one transaction, so a
+hash → skip if already imported → back up DB → check every ONS data issue is explained in notices.toml →
+parse and validate into a staging table → upsert observations, logging every revised value → record the import
+and ONS's data-issue text. It all happens in one transaction, so a
 failure leaves the database exactly as it was.
 """
 
@@ -16,6 +17,7 @@ from datetime import datetime, timezone
 from importlib.resources import files
 from pathlib import Path
 
+from .notices import DEFAULT_NOTICES, check_issues, load_notices
 from .workbook import TABLES, Location, Occupation, Workbook
 
 BATCH = 50_000
@@ -96,12 +98,35 @@ def _upsert_reference(conn: sqlite3.Connection, occupations: dict[str, Occupatio
         )
 
 
-def run_import(db_path: Path, xlsx_path: Path, source_url: str | None = None) -> ImportResult:
+def _save_issues(conn: sqlite3.Connection, import_id: int, issues: list[tuple[str, str]]) -> None:
+    conn.executemany("INSERT INTO data_issues (import_id, position, heading, text) VALUES (?, ?, ?, ?)",
+                     [(import_id, i, h, t) for i, (h, t) in enumerate(issues)])
+
+
+def _backfill_issues(conn: sqlite3.Connection, import_id: int, xlsx_path: Path, notices_path: Path) -> None:
+    """Releases imported before S-010 have no data issues saved; read them from the same file."""
+    if conn.execute("SELECT 1 FROM data_issues WHERE import_id = ?", (import_id,)).fetchone():
+        return
+    wb = Workbook(xlsx_path)
+    try:
+        issues = wb.data_issues()
+    finally:
+        wb.close()
+    check_issues(issues, load_notices(notices_path))
+    conn.execute("BEGIN")
+    _save_issues(conn, import_id, issues)
+    conn.execute("COMMIT")
+
+
+def run_import(db_path: Path, xlsx_path: Path, source_url: str | None = None,
+               notices_path: Path = DEFAULT_NOTICES) -> ImportResult:
     digest = sha256(xlsx_path)
+    notices = load_notices(notices_path)
     conn = connect(db_path)
     try:
         done = conn.execute("SELECT id FROM imports WHERE sha256 = ? AND status = 'succeeded'", (digest,)).fetchone()
         if done:
+            _backfill_issues(conn, done[0], xlsx_path, notices_path)
             cur = conn.execute(
                 "INSERT INTO imports (filename, sha256, started_at, finished_at, status, error) VALUES (?, ?, ?, ?, 'skipped', ?)",
                 (xlsx_path.name, digest, _now(), _now(), f"Same file as import #{done[0]}"),
@@ -116,7 +141,7 @@ def run_import(db_path: Path, xlsx_path: Path, source_url: str | None = None) ->
             (xlsx_path.name, digest, source_url, _now()),
         ).lastrowid
         try:
-            result = _import(conn, xlsx_path, import_id)
+            result = _import(conn, xlsx_path, import_id, notices)
         except Exception as e:
             conn.execute("UPDATE imports SET status = 'failed', finished_at = ?, error = ? WHERE id = ?",
                          (_now(), f"{type(e).__name__}: {e}", import_id))
@@ -126,11 +151,13 @@ def run_import(db_path: Path, xlsx_path: Path, source_url: str | None = None) ->
         conn.close()
 
 
-def _import(conn: sqlite3.Connection, xlsx_path: Path, import_id: int) -> ImportResult:
+def _import(conn: sqlite3.Connection, xlsx_path: Path, import_id: int, notices: dict) -> ImportResult:
     wb = Workbook(xlsx_path)
     conn.execute("BEGIN IMMEDIATE")
     try:
         info = wb.release_info()
+        issues = wb.data_issues()
+        check_issues(issues, notices)  # before reading millions of values
         conn.execute("""CREATE TEMP TABLE staging (
                           soc_code TEXT NOT NULL, location_code TEXT NOT NULL, period TEXT NOT NULL,
                           adverts INTEGER, status TEXT NOT NULL, source_table TEXT NOT NULL,
@@ -153,6 +180,7 @@ def _import(conn: sqlite3.Connection, xlsx_path: Path, import_id: int) -> Import
             rows_read += len(batch)
 
         _upsert_reference(conn, occupations, locations)
+        _save_issues(conn, import_id, issues)
 
         inserted = conn.execute("""SELECT COUNT(*) FROM staging s WHERE NOT EXISTS (
                                      SELECT 1 FROM observations o WHERE o.soc_code = s.soc_code

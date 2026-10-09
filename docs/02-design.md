@@ -212,7 +212,8 @@ Picks: **1B** (simplified) · **2H** · **3B** · **4B** · **5A** · **6A + 6D*
 | Headline number | Number + inline trend (7F). The sparkline **draws from start to end** (1.4s, ease-out), then the end dot appears. The main chart draws the same way. |
 | Cadence switch | **Monthly / Quarterly** toggle in the chart header, default **Monthly**. It changes the whole page: number, pill, cards, chart ranges (6M·1Y·3Y·5Y·All vs 1Y·3Y·5Y·All) and other places. Monthly local figures are the broader job group, with a banner explaining it; Quarterly is the exact job. The page title always keeps the job the user searched for. |
 | Monthly comparisons | Pill, trend and other places compare the last 3 months with the same 3 months a year earlier ("Jun–Aug: 7.0% fewer than a year ago"), so they never contradict each other. |
-| | Motion | Ink-in entrance (staggered 80ms) + line drawing. The split-flap is not used for the headline any more. All motion is off under reduced motion. |
+| Missing figures (S-010, 2026-10-09) | **8A:** a label per cause: **Data not collected** · **Withheld by ONS** · **Not published yet** · **Not found**, each with ONS's reason. **9C:** reason written out in the card and chart callout, ⓘ popover in the numbers table and places list. **10A:** reasons from `pipeline/notices.toml`, checked against the cover sheet on every import. **11D:** estimated months aren't marked on the chart, only tagged in "Show the numbers" and explained in "About this data". |
+| Motion | Ink-in entrance (staggered 80ms) + line drawing. The split-flap is not used for the headline any more. All motion is off under reduced motion. |
 
 ### Tokens
 

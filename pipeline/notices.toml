@@ -1,0 +1,81 @@
+# Why figures are missing or estimated (S-010). One [[notice]] per "Data issue - …" heading on the ONS
+# workbook's cover sheet. The heading must match the workbook exactly: a heading that isn't listed here stops
+# the import, so a new gap can never reach the site without a reason. Entries ONS has since dropped are ignored.
+#
+# kind:
+#   not_collected  ONS couldn't get the data at all          → "Data not collected"
+#   withheld       collected, but withheld over quality     → "Withheld by ONS"
+#   estimated      has figures, but partly imputed by ONS   → "Partly estimated by ONS" (dotted line)
+#   caution        has figures; ONS advises caution         → shown in "About this data" only
+# months / quarters: the periods it applies to ("2026-03", "2026-Q1"). Quarters follow the Notes sheet.
+# reason: short plain-English summary of ONS's wording. Keep it faithful; the full ONS text is quoted on the site.
+
+[[notice]]
+heading = "Data issue - August 2026"
+kind = "withheld"
+months = ["2026-08"]
+quarters = []
+reason = "Figures swung unusually in August 2026, so ONS withheld the least reliable ones over quality concerns."
+
+[[notice]]
+heading = "Data issue - June and July 2026"
+kind = "withheld"
+months = ["2026-06", "2026-07"]
+quarters = ["2026-Q2"]  # Note 12
+reason = "A data source dropped out in June and July 2026, so ONS withheld the figures it trusted least."
+
+[[notice]]
+heading = "Data issue - data for October 2025 - July 2026"
+kind = "estimated"
+months = ["2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-07"]
+quarters = ["2025-Q4", "2026-Q1", "2026-Q3"]
+reason = "ONS partly estimated this period because a major source had many duplicate adverts and later couldn't be read. Treat single-period jumps with caution."
+
+[[notice]]
+heading = "Data issue - March 2026"
+kind = "not_collected"
+months = ["2026-03"]
+quarters = ["2026-Q1"]
+reason = "ONS couldn't get advert data from a major source in March 2026, so it withheld every figure. It hopes to add them in a later release."
+
+[[notice]]
+heading = "Data issue - February 2026"
+kind = "withheld"
+months = ["2026-02"]
+quarters = []
+reason = "A data source dropped out in February 2026, so ONS withheld the figures it trusted least."
+
+[[notice]]
+heading = "Data issue - December 2025"
+kind = "withheld"
+months = ["2025-12"]
+quarters = ["2025-Q4"]  # Note 10
+reason = "A data source dropped out in December 2025, so ONS withheld the figures it trusted least."
+
+[[notice]]
+heading = "Data issue - data for July and August 2025"
+kind = "caution"
+months = ["2025-07", "2025-08"]
+quarters = ["2025-Q3"]
+reason = "A technical problem meant ONS missed a small number of adverts posted between 28 July and 4 August 2025."
+
+[[notice]]
+heading = "Data issue - data for June 2025"
+kind = "withheld"
+months = ["2025-06", "2025-07"]
+quarters = ["2025-Q2", "2025-Q3"]  # Notes 7 and 8
+reason = "A large data source dropped out in June and July 2025, so ONS withheld the figures it trusted least."
+
+[[notice]]
+heading = "Data issue - data for July and August 2023"
+kind = "caution"
+months = ["2023-07", "2023-08"]
+quarters = ["2023-Q3"]
+reason = "Adverts dropped sharply around July 2023 in the data ONS received. ONS says the decline over 2023 matches its vacancy survey."
+
+[[notice]]
+heading = "Data issue - January 2017 data"
+kind = "caution"
+months = ["2017-01"]
+quarters = ["2017-Q1"]
+reason = "The series starts in January 2017. ONS advises against relying on the very first month."

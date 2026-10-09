@@ -49,3 +49,11 @@ Map the transparent trend rule onto the brand: Growing = "Not cooked", Steady = 
 ### S-009 · Ticker-triangle logo and favicon
 **Status:** approved 2026-10-08 (requested by owner) → moved to `features.md`
 Use the ▲▼ ticker mark from the design as the site logo and as the browser-tab icon (SVG favicon, with a PNG fallback and Apple touch icon).
+
+### S-010 · Explain every missing or estimated figure with ONS's reason
+**Status:** approved 2026-10-09 (requested by owner). Picked **8A · 9C · 10A · 11D** from `mockups/collages/collage-8…11` → moved to `features.md`
+- **Labels (8A):** one per cause: "Data not collected" (only when ONS couldn't get the data, e.g. March 2026), "Withheld by ONS" (collected but withheld over quality), "Not published yet", "Not found" (ONS publishes no figure for this job in this place).
+- **Helper (9C, mix):** the reason is written out in the "Last month/quarter" card and the chart callout; in the numbers table and the places list, an ⓘ next to the label opens a popover with the reason and the ONS source ("ONS, Data issue – March 2026"). The popover works on tap, hover and keyboard.
+- **Source (10A):** each import saves ONS's own "Data issue" paragraphs from the cover sheet. `pipeline/notices.toml` maps each heading to its months/quarters, a cause and a short reason. A heading that isn't mapped stops the import, so a gap can never appear without a reason. "About this data" quotes ONS word for word.
+- **Estimated months (11D):** the chart is unchanged. Partly estimated months get a "Partly estimated ⓘ" tag in "Show the numbers", and "About this data" explains them.
+**Why:** a gap with no explanation looks like a broken site or, worse, like zero adverts. Using ONS's own reasons keeps the site honest and trusted.

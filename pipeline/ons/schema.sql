@@ -68,3 +68,12 @@ CREATE TABLE IF NOT EXISTS observation_revisions (
   new_status    TEXT NOT NULL,
   import_id     INTEGER NOT NULL REFERENCES imports(id)
 );
+
+-- ONS's own "Data issue" paragraphs from the cover sheet of each imported release (S-010).
+CREATE TABLE IF NOT EXISTS data_issues (
+  import_id  INTEGER NOT NULL REFERENCES imports(id),
+  position   INTEGER NOT NULL,            -- order on the cover sheet
+  heading    TEXT NOT NULL,
+  text       TEXT NOT NULL,
+  PRIMARY KEY (import_id, heading)
+);

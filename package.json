@@ -12,6 +12,7 @@
     "cf-typegen": "wrangler types",
     "postinstall": "wrangler types",
     "data:import": "uv run --project pipeline python -m ons import",
+    "data:export": "uv run --project pipeline python -m ons export",
     "data:status": "uv run --project pipeline python -m ons status",
     "test:pipeline": "uv run --project pipeline pytest pipeline"
   },
