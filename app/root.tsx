@@ -23,6 +23,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="theme-color" content="#0a0d12" media="(prefers-color-scheme: dark)" />
         <Meta />
         <Links />
+        <noscript>
+          <style>{`[data-chart] svg{visibility:visible!important}`}</style>
+        </noscript>
       </head>
       <body>
         {children}

@@ -56,9 +56,9 @@ def test_occupation_shard_monthly_and_quarterly(out):
     assert q["TLD"] == {"v": [None, None], "m": None, "derived": True}  # Q1 has a withheld month, Q4 no months
 
 
-def test_group_shard_has_local_authorities_only(out):
+def test_group_shard_has_local_authorities_and_london(out):
     g = load(out, "group/213.json")
-    assert set(g["monthly"]) == {"E08000003"}
+    assert set(g["monthly"]) == {"E08000003"}  # the test workbook has no London row in Table 4
     assert g["monthly"]["E08000003"]["v"] == [50, 0, None]
 
 

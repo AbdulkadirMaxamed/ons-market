@@ -354,7 +354,7 @@ Still open:
 1. **ONS download URL pattern and stable dataset page.** Needed only when automating (S-001).
 2. **Whether table numbering stays stable between releases.** It changed in September 2025 when the snapshot tables were removed, so the validator matches tables by title text, not only by number.
 3. **Whether revisions touch older periods or only the last ~12 months.** We'll measure this from the revision log after the second import.
-4. **Free-plan CPU time** for the result page (Phase 3 spike).
+4. ~~**Free-plan CPU time** for the result page.~~ **Answered 2026-10-09:** measured on the production build in workerd, against serving a static file as the baseline: about 3–4 ms for a page whose files are already parsed, plus 2–3.5 ms the first time an isolate parses a job's files (largest 285 KB). Worst case about 6–7 ms, under the 10 ms limit. Parsed files are cached per isolate (`data.server.ts`). Re-check after adding features to the page.
 5. ~~Whether `Total UK` in Table 3 equals the sum of regions.~~ **Answered 2026-10-08: it doesn't.** For SOC 2134 in Aug 2026, Total UK is 11,591 but the regions plus Unknown sum to 11,547. Always use ONS's own Total UK row; never derive the UK from regions.
 
 ---

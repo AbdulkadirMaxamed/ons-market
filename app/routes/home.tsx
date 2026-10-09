@@ -1,8 +1,15 @@
-import { Form } from "react-router";
+import { Form, Link } from "react-router";
 
 import type { Route } from "./+types/home";
 import { SiteFooter, SiteHeader } from "~/components/SiteChrome";
 import { loadShard, type Meta } from "~/lib/data.server";
+
+// Until search lands, a few real examples (Phase 3: homepage search).
+const TRY = [
+  ["Software developers in Manchester", "/market/programmers-and-software-development-professionals/manchester"],
+  ["Data analysts in Leeds", "/market/data-analysts/leeds"],
+  ["Chefs in London", "/market/chefs/london"],
+] as const;
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -16,7 +23,8 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return { meta: await loadShard<Meta>(request, "meta.json") };
+  const meta = await loadShard<Meta>(request, "meta.json");
+  return { meta: meta && { releaseLabel: meta.releaseLabel, latestMonth: meta.latestMonth } };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -60,6 +68,21 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               Check the market
             </button>
           </Form>
+
+          {meta && (
+            <div className="ink-in mt-3 flex flex-wrap items-center gap-2" style={{ "--i": 2 } as React.CSSProperties}>
+              <span className="text-sm text-ink-3">Try</span>
+              {TRY.map(([label, href]) => (
+                <Link
+                  key={href}
+                  to={href}
+                  className="flex min-h-[38px] items-center rounded-full border border-rule bg-surface px-3.5 text-sm"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {!meta && (
             <p className="mt-6 max-w-[60ch] rounded-lg border border-rule bg-surface px-4 py-3 text-sm text-ink-2">

@@ -18,16 +18,16 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [x] React Router (framework mode, v8.4) + TypeScript + Tailwind v4 on Cloudflare Workers, pnpm
 - [x] Design tokens (light + dark), Lexend, site header/footer, error and 404 page
 - [x] About the data page (first version)
-- [ ] Spike: free-plan CPU time for the result page
+- [x] Spike: free-plan CPU time for the result page (≈3–4 ms warm, ≈6–7 ms worst case when a new job's files are parsed; limit 10 ms)
 - [x] Python pipeline project (uv): `schema.sql`, CLI (`pnpm data:import`, `pnpm data:status`)
-- [~] Shard loader (`data.server.ts`) and formatting helpers
-- [~] Homepage with occupation and location search (layout done; search needs exported data)
-- [ ] Result page: hero (number, pill, drawing sparkline), three cards, chart, other places, about this data
-- [ ] Monthly/Quarterly switch driving the whole result page (Monthly default)
-- [ ] Chart: gaps for missing data, notice bands, range tabs, table view, keyboard support
-- [ ] Ink-in entrance and line-drawing animation for sparkline and chart (reduced-motion safe)
-- [ ] Light and dark theme
-- [~] Tests: metrics (pytest, done: 34), formatting and loaders (Vitest)
+- [x] Shard loader (`data.server.ts`, cached per isolate) and formatting helpers (`format.ts`, `missing.ts`)
+- [~] Homepage with occupation and location search (layout and example links done; search comboboxes next)
+- [x] Result page `/market/:job/:place`: hero (number, pill, drawing sparkline), three cards, chart, other places, about this data
+- [x] Monthly/Quarterly switch driving the whole result page (Monthly default, `?view=quarterly`, no reload)
+- [x] Chart: hatched gaps with ONS-reason callout, range tabs, "Show the numbers" table, hover/tap/arrow-key reading
+- [x] Ink-in entrance and line-drawing animation for sparkline and chart (reduced-motion safe)
+- [x] Light and dark theme (follows the device setting)
+- [x] Tests: pipeline (pytest, 69) and web (Vitest, 22: formatting, missing-figure reasons, result-page data)
 
 ## Phase 4: real data
 - [x] Workbook structure validator (fails loudly on layout change)
@@ -48,7 +48,7 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [ ] S-007 · Share of all adverts in the area, and how it has changed
 - [ ] S-008 · "Cooked meter" wording (Not cooked / Simmering / Cooked) shown next to the plain trend word
 - [x] S-009 · Ticker-triangle (▲▼) logo and favicon
-- [~] S-010 · Missing figures labelled by cause with ONS's reason (8A · 9C · 10A · 11D). Data side done (`notices.toml` checked on import, ONS text exported, 13 tests); display comes with the result page
+- [x] S-010 · Missing figures labelled by cause with ONS's reason (8A · 9C · 10A · 11D): `notices.toml` checked on import, reasons in the card, chart callout, numbers table and places list
 
 ## Phase 5: polish
 - [ ] Occupation and location ranking pages (paginated)

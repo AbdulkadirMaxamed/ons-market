@@ -21,6 +21,9 @@
   --flat: #4b5563;
   --flat-bg: #eceff3;
   --missing: #8a94a3;
+  --est: #8a5a00;
+  --est-bg: #fff3d6;
+  --est-rule: #e3c46a;
   --callout: #0b1220;
   --callout-ink: #ffffff;
   --focus: #1559c9;
@@ -47,6 +50,9 @@
     --flat: #a3adbb;
     --flat-bg: #1d2430;
     --missing: #667181;
+    --est: #f2c230;
+    --est-bg: #2b2210;
+    --est-rule: #6b5313;
     --callout: #e9edf3;
     --callout-ink: #0a0d12;
     --focus: #7fb0ff;
@@ -73,6 +79,9 @@
   --flat: #a3adbb;
   --flat-bg: #1d2430;
   --missing: #667181;
+  --est: #f2c230;
+  --est-bg: #2b2210;
+  --est-rule: #6b5313;
   --callout: #e9edf3;
   --callout-ink: #0a0d12;
   --focus: #7fb0ff;
@@ -98,6 +107,11 @@
   --color-flat: var(--flat);
   --color-flat-bg: var(--flat-bg);
   --color-missing: var(--missing);
+  --color-callout: var(--callout);
+  --color-est: var(--est);
+  --color-est-bg: var(--est-bg);
+  --color-est-rule: var(--est-rule);
+  --color-callout-ink: var(--callout-ink);
   --radius-card: 12px;
   --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
@@ -145,3 +159,35 @@
     animation: none;
   }
 }
+
+/* Line drawing (docs/02-design.md §13, 7F): the clip rect grows from the left, then the end dot appears. */
+.draw-clip {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: draw-line 1.4s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+.draw-dot {
+  animation: fade-in 0.3s 1.35s both;
+}
+@keyframes draw-line {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .draw-clip,
+  .draw-dot {
+    animation: none;
+  }
+}
+
+/* Legend swatch for a missing period: matches the chart's hatched column. */
+@utility swatch-missing {
+  background: repeating-linear-gradient(45deg, var(--missing) 0 2px, transparent 2px 5px);
+}
+

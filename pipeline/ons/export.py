@@ -9,7 +9,7 @@ Files written to `public/data/` (git-ignored, deployed with the site):
   occupation/{soc4}.json    one exact job: monthly UK + regions (Table 3), quarterly for every place
                             (Table 5 for local authorities and London; whole quarters of Table 3 for the
                             UK and other regions, marked `derived`)
-  group/{soc3}.json         one broader job group: monthly for every local authority (Table 4), used by the
+  group/{soc3}.json         one broader job group: monthly for every local authority and London (Table 4), used by the
                             Monthly view of a local authority
 
 Series are arrays aligned to the shard's `months` / `quarters` (`start` … `end`, consecutive); `null` means ONS
@@ -134,7 +134,7 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
     places = conn.execute(
         "SELECT code, name, slug, type, parent_code FROM locations WHERE type IN ('uk', 'region', 'lad') "
         "ORDER BY type = 'lad', name").fetchall()
-    lads = {code for code, _, _, t, _ in places if t == "lad"}
+    lads = {code for code, _, _, t, _ in places if t == "lad"} | {"TLI"}  # London: one area in Tables 4 and 5
 
     shutil.rmtree(tmp, ignore_errors=True)
     files = size = 0

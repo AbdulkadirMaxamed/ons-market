@@ -66,7 +66,7 @@ There's no runtime database, no backend services and no paid infrastructure. The
 | Styling | Tailwind CSS v4, Lexend, light and dark themes |
 | Hosting | Cloudflare Workers + static assets |
 | Data pipeline | Python 3.12, uv, openpyxl, SQLite |
-| Tests | pytest (pipeline), Vitest (web, planned) |
+| Tests | pytest (pipeline), Vitest (web) |
 | Package manager | pnpm |
 
 ## Getting started
@@ -116,7 +116,9 @@ If ONS has added a new data issue to the workbook's cover sheet, the import stop
 | `pnpm data:import <file>` | Import an ONS workbook into SQLite |
 | `pnpm data:export` | Calculate the comparisons and write `public/data/*.json` |
 | `pnpm data:status` | Show recent imports |
-| `pnpm test:pipeline` | Run the pipeline tests |
+| `pnpm test` | Run all tests (web and pipeline) |
+| `pnpm test:web` | Run the web tests (Vitest) |
+| `pnpm test:pipeline` | Run the pipeline tests (pytest) |
 
 ## Project structure
 
@@ -148,7 +150,7 @@ suggestions.md       ideas waiting for approval
 
 ## Status
 
-🚧 **In development.** The architecture, the design and the ONS importer are done, and the first real release is imported and verified. The metrics, the data export and the result page are being built now. See [`features.md`](features.md) for the live checklist.
+🚧 **In development.** The importer, metrics, data export and the result page (with the Monthly/Quarterly switch and ONS's reasons for every missing figure) are working on the real August 2026 release. Homepage search is next. See [`features.md`](features.md) for the live checklist.
 
 ## Data source and attribution
 

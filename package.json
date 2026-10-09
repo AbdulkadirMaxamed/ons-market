@@ -14,6 +14,8 @@
     "data:import": "uv run --project pipeline python -m ons import",
     "data:export": "uv run --project pipeline python -m ons export",
     "data:status": "uv run --project pipeline python -m ons status",
+    "test": "vitest run && pnpm test:pipeline",
+    "test:web": "vitest run",
     "test:pipeline": "uv run --project pipeline pytest pipeline"
   },
   "dependencies": {
@@ -32,6 +34,7 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3",
+    "vitest": "^5.0.3",
     "wrangler": "^4.149.0"
   }
 }
