@@ -74,3 +74,38 @@ export type Meta = {
   withheldEverywhere: string[];
   notices: Notice[];
 };
+
+export type Mover = { soc: string; name: string; slug: string; cur: number; base: number; pct: number };
+
+export type Overview = {
+  months: Span;
+  uk: Series | null; // all occupations, UK, monthly (Table 1)
+  moversWindow: { from: string; to: string } | null;
+  moversMinBase: number;
+  rising: Mover[];
+  falling: Mover[];
+};
+
+/** One line of a ranking (location files; short keys keep them small). */
+export type RankRow = {
+  c: string; // SOC code (4-digit, or 3-digit for a local authority's monthly rows)
+  p: string | null; // latest period with a figure
+  v: number | null; // that figure
+  s: Change["s"]; // the comparison the result page leads with (3-month window or year on year)
+  pct: number | null;
+  b: "roll" | "yoy" | null;
+  t: Metrics["trend"];
+};
+
+export type LocationShard = {
+  code: string;
+  name: string;
+  slug: string;
+  type: PlaceType;
+  region: string | null;
+  months: Span;
+  quarters: Span;
+  total: Series | null; // all jobs, monthly; only where ONS publishes it
+  monthly: { level: 3 | 4; rows: RankRow[] };
+  quarterly: { level: 4; rows: RankRow[] };
+};

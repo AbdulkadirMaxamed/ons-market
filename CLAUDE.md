@@ -18,6 +18,7 @@ Read `docs/01-architecture.md` (Phase 1) and `docs/02-design.md` (Phase 2) befor
 
 - **Suggestions vs features:** new ideas go in `suggestions.md` as `S-###` with status `pending`. Only move one into `features.md` after the user explicitly approves it. Rejected ones stay in `suggestions.md` marked `rejected` with a reason; don't re-suggest them.
 - `features.md` checklist: `[ ]` planned · `[~]` in progress · `[x]` done. Update it as work lands.
+- **Bugs:** log every bug found (code, data, tooling, design or process) in `bugs.md` as `B-###` with symptom, cause, fix and lesson, then fix it. Fixed bugs stay in the file; never delete entries. Add a test for the fix where possible.
 - **Do not commit.** The user makes all git commits themselves.
 - Keep it light: no release process, CHANGELOG or tags until Phase 5.
 - Importing is manual for now: the user downloads the XLSX into `data/raw/` and runs the import command.

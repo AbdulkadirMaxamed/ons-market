@@ -80,6 +80,21 @@ describe("marketViews", () => {
     expect(v.M!.places.every((p) => !p.me && p.name !== "United Kingdom")).toBe(true);
   });
 
+  it("fills all six rows when the place itself isn't listed (B-025)", () => {
+    const regions = Object.fromEntries(
+      ["TLC", "TLD", "TLE", "TLF", "TLG", "TLH", "TLI"].map((c, i) => [c, s("2026-08", 100 + i)]),
+    );
+    const many = {
+      ...index,
+      places: [
+        index.places[0],
+        ...Object.keys(regions).map((c) => ({ code: c, name: c, slug: c.toLowerCase(), type: "region" as const, region: null })),
+      ],
+    };
+    const v = marketViews({ ...occupation, monthly: { K02000001: s("2026-08", 1000), ...regions } }, null, many, many.places[0]);
+    expect(v.M!.places).toHaveLength(6);
+  });
+
   it("returns null for a view ONS doesn't publish", () => {
     const v = marketViews({ ...occupation, quarterly: {} }, group, index, place("manchester"));
     expect(v.Q).toBeNull();

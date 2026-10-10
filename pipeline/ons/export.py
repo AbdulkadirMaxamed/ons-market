@@ -11,6 +11,10 @@ Files written to `public/data/` (git-ignored, deployed with the site):
                             UK and other regions, marked `derived`)
   group/{soc3}.json         one broader job group: monthly for every local authority and London (Table 4), used by the
                             Monthly view of a local authority
+  location/{slug}.json      one place, every job, latest comparisons only (ranking pages): monthly rows are exact jobs
+                            for the UK and regions and 3-digit groups for local authorities; quarterly rows are exact
+                            jobs. Plus the all-jobs total where ONS publishes one (Table 1 UK, Table 2 local
+                            authorities and London); other regions have none.
 
 Series are arrays aligned to the shard's `months` / `quarters` (`start` … `end`, consecutive); `null` means ONS
 withheld the figure. Every place carries its comparisons from `metrics.series_metrics`.
@@ -41,6 +45,7 @@ class ExportResult:
     bytes: int
     occupations: int
     groups: int
+    places: int
 
 
 def _periods(start: str, end: str) -> list[str]:
@@ -81,6 +86,16 @@ def _series(conn: sqlite3.Connection, soc: str, table: str, periods: list[str],
 
 def _place(values: list[int | None], periods: list[str], cadence: str, **extra) -> dict:
     return {"v": values, "m": series_metrics(values, periods, cadence), **extra}
+
+
+def _row(code: str, m: dict | None) -> dict:
+    """One line of a ranking: the latest figure and the comparison the result page leads with (short keys keep
+    location files small: c code, p period, v value, s status, pct, b basis, t trend)."""
+    if m is None:
+        return {"c": code, "p": None, "v": None, "s": "missing", "pct": None, "b": None, "t": "na"}
+    head = m["roll"] if m["basis"] == "roll" else m["yoy"]
+    return {"c": code, "p": m["latest"]["period"], "v": m["latest"]["value"], "s": head["s"],
+            "pct": head.get("pct"), "b": m["basis"], "t": m["trend"]}
 
 
 def _withheld_everywhere(conn: sqlite3.Connection, table: str) -> list[str]:
@@ -164,6 +179,8 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
     })
 
     movers = []
+    rows_m: dict[str, list[dict]] = {}  # location → monthly ranking rows
+    rows_q: dict[str, list[dict]] = {}
     for soc, name, slug, group in occupations:
         monthly = _series(conn, soc, "T3", months)
         monthly_places = {loc: _place(v, months, "M") for loc, v in monthly.items()}
@@ -181,6 +198,10 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
             quarterly[loc] = _place([aligned.get(p) for p in quarters], quarters, "Q", derived=True)
         for loc, values in quarterly_lad.items():
             quarterly[loc] = _place(values, quarters, "Q")
+        for loc, place in monthly_places.items():  # UK and regions: exact jobs
+            rows_m.setdefault(loc, []).append(_row(soc, place["m"]))
+        for loc, place in quarterly.items():
+            rows_q.setdefault(loc, []).append(_row(soc, place["m"]))
         write(f"occupation/{soc}.json", {
             "soc": soc, "name": name, "slug": slug, "group": group,
             "months": month_span, "quarters": quarter_span,
@@ -203,9 +224,24 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
     })
 
     for code, (name, slug) in groups.items():
+        group_places = {loc: _place(v, months, "M") for loc, v in _series(conn, code, "T4", months, lads).items()}
         write(f"group/{code}.json", {
-            "soc": code, "name": name, "slug": slug, "months": month_span,
-            "monthly": {loc: _place(v, months, "M") for loc, v in _series(conn, code, "T4", months, lads).items()},
+            "soc": code, "name": name, "slug": slug, "months": month_span, "monthly": group_places,
+        })
+        for loc, place in group_places.items():
+            if loc != "TLI":  # London is a region: its monthly ranking uses exact jobs (Table 3)
+                rows_m.setdefault(loc, []).append(_row(code, place["m"]))
+
+    # Ranking pages: one file per place. All-jobs totals only where ONS publishes them.
+    totals = {**_series(conn, "ALL", "T2", months), **_series(conn, "ALL", "T1", months, {UK[0]})}
+    for code, name, slug, ptype, parent in places:
+        total = totals.get(code)
+        write(f"location/{slug}.json", {
+            "code": code, "name": name, "slug": slug, "type": ptype, "region": parent if ptype == "lad" else None,
+            "months": month_span, "quarters": quarter_span,
+            "total": _place(total, months, "M") if total else None,
+            "monthly": {"level": 3 if ptype == "lad" else 4, "rows": rows_m.get(code, [])},
+            "quarterly": {"level": 4, "rows": rows_q.get(code, [])},
         })
 
     old = out_dir.with_name(out_dir.name + ".old")
@@ -214,4 +250,4 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
         out_dir.rename(old)
     tmp.rename(out_dir)
     shutil.rmtree(old, ignore_errors=True)
-    return ExportResult(files=files, bytes=size, occupations=len(occupations), groups=len(groups))
+    return ExportResult(files=files, bytes=size, occupations=len(occupations), groups=len(groups), places=len(places))

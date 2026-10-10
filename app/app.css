@@ -144,7 +144,9 @@
 
 /* Ink-in entrance (docs/02-design.md §12). Set --i on the element to stagger. */
 @utility ink-in {
-  animation: ink-in 0.6s var(--ease-out-soft) both;
+  /* backwards, not both: once finished it leaves no filter/transform behind, so popovers and suggestion lists
+     inside one block can sit on top of the next block. */
+  animation: ink-in 0.6s var(--ease-out-soft) backwards;
   animation-delay: calc(var(--i, 0) * 80ms);
 }
 @keyframes ink-in {

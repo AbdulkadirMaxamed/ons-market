@@ -44,7 +44,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const region = place.region ? index.places.find((p) => p.code === place.region) : undefined;
   return {
     job: { code: occ.soc, name: occ.name, slug: occ.slug },
-    place: { code: place.code, name: placeName(place), type: place.type, region: region && placeName(region) },
+    place: { code: place.code, name: placeName(place), slug: place.slug, type: place.type, region: region && placeName(region) },
     views: marketViews(occupation, group, index, place),
     notices: meta.notices,
     release: { publishedOn: meta.publishedOn, latestMonth: meta.latestMonth, latestQuarter: meta.latestQuarter },
@@ -155,7 +155,7 @@ export default function Market({ loaderData }: Route.ComponentProps) {
       <main className="mx-auto max-w-[1040px] px-4 md:px-8">
         <Heading job={job} place={place} view={v} other={views[cadence === "M" ? "Q" : "M"] != null} asked={asked} notices={notices} />
         {v.m ? (
-          <Result key={cadence} job={job} view={v} notices={notices} release={release} setCadence={setCadence} hasOther={{ M: !!views.M, Q: !!views.Q }} />
+          <Result key={cadence} job={job} place={place} view={v} notices={notices} release={release} setCadence={setCadence} hasOther={{ M: !!views.M, Q: !!views.Q }} />
         ) : (
           <div className="mt-4 rounded-card border border-rule bg-surface p-5">
             <MissingTag missing={missingFor(v.span.end, notices)} written />
@@ -242,6 +242,7 @@ function Banner({ children }: { children: React.ReactNode }) {
 
 function Result({
   job,
+  place,
   view,
   notices,
   release,
@@ -249,6 +250,7 @@ function Result({
   hasOther,
 }: {
   job: { name: string; slug: string };
+  place: { name: string; slug: string };
   view: View;
   notices: Notice[];
   release: { publishedOn: string; latestMonth: string; latestQuarter: string };
@@ -440,7 +442,7 @@ function Result({
         )}
       </section>
 
-      <Places view={view} job={job} notices={notices} what={view.broader ? sentenceCase(view.job.name) : job.name} />
+      <Places view={view} job={job} place={place} notices={notices} what={view.broader ? sentenceCase(view.job.name) : job.name} />
 
       <AboutData view={view} notices={notices} release={release} m={m} />
     </>
@@ -499,8 +501,30 @@ function CardValue({ change, words }: { change: Change; words: [string, string] 
   return <span className="text-[19px] font-medium text-ink-3">{text}</span>;
 }
 
-function Places({ view, job, notices, what }: { view: View; job: { slug: string }; notices: Notice[]; what: string }) {
-  if (view.places.length < 2) return null;
+function Places({
+  view,
+  job,
+  place,
+  notices,
+  what,
+}: {
+  view: View;
+  job: { slug: string };
+  place: { name: string; slug: string };
+  notices: Notice[];
+  what: string;
+}) {
+  const more = (
+    <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+      <Link to={`/occupation/${job.slug}${view.cadence === "Q" ? "?view=quarterly" : ""}`} className="underline">
+        See all places for this job ›
+      </Link>
+      <Link to={`/location/${place.slug}${view.cadence === "Q" ? "?view=quarterly" : ""}`} className="underline">
+        Every job in {place.name} ›
+      </Link>
+    </p>
+  );
+  if (view.places.length < 2) return more;
   const newest = view.places[0].period;
   const missing = missingFor(newest, notices);
   const qs = view.cadence === "Q" ? "?view=quarterly" : "";
@@ -551,6 +575,7 @@ function Places({ view, job, notices, what }: { view: View; job: { slug: string 
           ? "Change compares the last 3 months with the same 3 months a year earlier, or the single month where one of those months is missing."
           : "Change compares the quarter with the same quarter a year earlier."}
       </p>
+      {more}
     </section>
   );
 }

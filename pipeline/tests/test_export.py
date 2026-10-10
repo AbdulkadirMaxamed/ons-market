@@ -21,7 +21,8 @@ def out(make_workbook, db_path, tmp_path):
 
 def test_writes_every_file(out):
     names = sorted(str(p.relative_to(out)) for p in out.rglob("*.json"))
-    assert names == ["group/213.json", "meta.json", "occupation/2134.json", "overview.json", "search.json"]
+    assert names == ["group/213.json", "location/london.json", "location/manchester.json", "location/north-west.json",
+                     "location/united-kingdom.json", "meta.json", "occupation/2134.json", "overview.json", "search.json"]
 
 
 def test_meta(out):
@@ -84,3 +85,29 @@ def test_failed_export_keeps_previous_files(out, db_path, monkeypatch):
 def test_no_database(tmp_path):
     with pytest.raises(FileNotFoundError, match="pnpm data:import"):
         run_export(tmp_path / "none.sqlite", tmp_path / "out")
+
+
+def test_location_files_rank_every_job(out):
+    man = load(out, "location/manchester.json")
+    assert (man["type"], man["region"]) == ("lad", "TLD")
+    assert man["total"]["v"] == [10, 11, None]  # Table 2, all jobs
+    assert man["monthly"]["level"] == 3  # local authorities: broader groups monthly (Table 4)
+    # Feb-26 is a real zero, so it's the latest figure (zeros are values, never gaps)
+    assert man["monthly"]["rows"] == [{"c": "213", "p": "2026-02", "v": 0, "s": "missing", "pct": None, "b": "yoy", "t": "na"}]
+    assert man["quarterly"] == {"level": 4, "rows": [
+        {"c": "2134", "p": "2025-Q4", "v": 300, "s": "missing", "pct": None, "b": "yoy", "t": "na"}]}
+
+
+def test_location_files_for_regions_and_the_uk(out):
+    nw = load(out, "location/north-west.json")
+    assert nw["total"] is None  # ONS publishes no all-jobs total for regions
+    assert nw["monthly"]["level"] == 4
+    assert [r["c"] for r in nw["monthly"]["rows"]] == ["2134"]  # unknown occupations left out
+    assert nw["quarterly"]["rows"][0]["v"] is None  # derived quarter with a withheld month
+
+    london = load(out, "location/london.json")
+    assert london["total"]["v"] == [50, 51, None]  # Table 2's London row
+    assert london["monthly"]["rows"] == []  # the test workbook has no London row in Table 3
+
+    uk = load(out, "location/united-kingdom.json")
+    assert uk["total"]["v"] == [1000, 1100, None]  # Table 1

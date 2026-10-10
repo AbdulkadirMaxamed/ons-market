@@ -138,6 +138,7 @@ pipeline/            Python data pipeline
 docs/                architecture, design and workbook profile
 mockups/             design explorations and the final reference design
 features.md          approved feature checklist
+bugs.md              every bug found, its cause, fix and lesson
 suggestions.md       ideas waiting for approval
 ```
 
@@ -147,10 +148,11 @@ suggestions.md       ideas waiting for approval
 - [`docs/02-design.md`](docs/02-design.md): UI/UX direction and final design decisions
 - [`docs/03-workbook.md`](docs/03-workbook.md): what is actually inside the ONS workbook
 - [`features.md`](features.md): what's built and what's next
+- [`bugs.md`](bugs.md): bugs found, how they were fixed, and what we learned
 
 ## Status
 
-🚧 **In development.** The importer, metrics, data export and the result page (with the Monthly/Quarterly switch and ONS's reasons for every missing figure) are working on the real August 2026 release. Homepage search is next. See [`features.md`](features.md) for the live checklist.
+🚧 **In development.** The importer, metrics, data export and the result page (with the Monthly/Quarterly switch and ONS's reasons for every missing figure) are working on the real August 2026 release. Homepage search and the ranking pages (every place for a job, every job in a place) work too; launch polish is next. See [`features.md`](features.md) for the live checklist.
 
 ## Data source and attribution
 

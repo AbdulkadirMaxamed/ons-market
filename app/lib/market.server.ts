@@ -55,8 +55,8 @@ function placeRows(series: Record<string, Series>, index: SearchIndex, place: Pl
     .filter(([code]) => allowed.has(code) || code === place.code)
     .map(([code, s]) => ({ code, s, size: s.m?.latest.value ?? -1 }))
     .sort((a, b) => b.size - a.size);
-  const top = rows.filter((r) => r.code !== place.code).slice(0, PLACES_SHOWN - 1);
   const me = place.type === "uk" ? undefined : rows.find((r) => r.code === place.code); // the UK page lists regions
+  const top = rows.filter((r) => r.code !== place.code).slice(0, me ? PLACES_SHOWN - 1 : PLACES_SHOWN);
   const picked = me ? [...top, me].sort((a, b) => b.size - a.size) : top;
   return picked.map(({ code, s }) => {
     const p = byCode.get(code)!;

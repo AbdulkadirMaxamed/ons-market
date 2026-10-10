@@ -13,17 +13,20 @@ export function InfoTip({
   children: React.ReactNode;
   align?: "left" | "right";
 }) {
-  const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState(false); // mouse over it
+  const [pinned, setPinned] = useState(false); // opened by tap, click or keyboard
+  const open = hover || pinned;
+  const close = () => (setHover(false), setPinned(false));
   const ref = useRef<HTMLSpanElement>(null);
   const id = useId();
 
   useEffect(() => {
     if (!open) return;
     const away = (e: PointerEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      if (!ref.current?.contains(e.target as Node)) close();
     };
     const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     };
     document.addEventListener("pointerdown", away);
     document.addEventListener("keydown", esc);
@@ -37,16 +40,16 @@ export function InfoTip({
     <span
       ref={ref}
       className="relative inline-flex align-middle"
-      onPointerEnter={(e) => e.pointerType === "mouse" && setOpen(true)}
-      onPointerLeave={(e) => e.pointerType === "mouse" && setOpen(false)}
-      onBlur={(e) => !ref.current?.contains(e.relatedTarget as Node) && setOpen(false)}
+      onPointerEnter={(e) => e.pointerType === "mouse" && setHover(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && setHover(false)}
+      onBlur={(e) => !ref.current?.contains(e.relatedTarget as Node) && close()}
     >
       <button
         type="button"
         aria-label={label}
         aria-expanded={open}
         aria-controls={id}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => (pinned ? close() : setPinned(true))}
         className="grid size-6 cursor-help place-items-center rounded-full text-ink-3 hover:text-ink"
       >
         <span

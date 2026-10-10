@@ -76,7 +76,7 @@ def cmd_export(args: argparse.Namespace) -> int:
         print(f"Export failed, previous files left in place.\n  {type(e).__name__}: {e}", file=sys.stderr)
         return 1
     print(f"Exported {r.files:,} files ({r.bytes / 1e6:.1f} MB) to {args.out} in {time.monotonic() - started:.0f}s")
-    print(f"  {r.occupations} jobs · {r.groups} job groups")
+    print(f"  {r.occupations} jobs · {r.groups} job groups · {r.places} places")
     return 0
 
 

@@ -21,13 +21,13 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [x] Spike: free-plan CPU time for the result page (≈3–4 ms warm, ≈6–7 ms worst case when a new job's files are parsed; limit 10 ms)
 - [x] Python pipeline project (uv): `schema.sql`, CLI (`pnpm data:import`, `pnpm data:status`)
 - [x] Shard loader (`data.server.ts`, cached per isolate) and formatting helpers (`format.ts`, `missing.ts`)
-- [~] Homepage with occupation and location search (layout and example links done; search comboboxes next)
+- [x] Homepage search: job and place type-ahead (keyboard and screen-reader friendly, list read from static `search.json`), works without JavaScript via the homepage loader; UK overview with all-jobs total and jobs rising/falling fastest
 - [x] Result page `/market/:job/:place`: hero (number, pill, drawing sparkline), three cards, chart, other places, about this data
 - [x] Monthly/Quarterly switch driving the whole result page (Monthly default, `?view=quarterly`, no reload)
 - [x] Chart: hatched gaps with ONS-reason callout, range tabs, "Show the numbers" table, hover/tap/arrow-key reading
 - [x] Ink-in entrance and line-drawing animation for sparkline and chart (reduced-motion safe)
 - [x] Light and dark theme (follows the device setting)
-- [x] Tests: pipeline (pytest, 69) and web (Vitest, 22: formatting, missing-figure reasons, result-page data)
+- [x] Tests: pipeline (pytest, 71) and web (Vitest, 41: formatting, search, rankings, missing-figure reasons, result-page data)
 
 ## Phase 4: real data
 - [x] Workbook structure validator (fails loudly on layout change)
@@ -51,7 +51,7 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [x] S-010 · Missing figures labelled by cause with ONS's reason (8A · 9C · 10A · 11D): `notices.toml` checked on import, reasons in the card, chart callout, numbers table and places list
 
 ## Phase 5: polish
-- [ ] Occupation and location ranking pages (paginated)
+- [x] Ranking pages: `/occupation/<job>` (every place) and `/location/<place>` (every job), Monthly/Quarterly, sort by adverts/rise/fall, 10 rows a page with a 25 option, region filter, job-group drill-down, linked from result pages
 - [ ] Public `/api/*` routes with input validation
 - [ ] About the data page (methodology, caveats, ONS notices)
 - [ ] SEO: metadata, stable URLs, sitemap

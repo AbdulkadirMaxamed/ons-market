@@ -241,11 +241,13 @@ CREATE TABLE observation_revisions (       -- audit trail when ONS changes histo
 | `overview.json` | homepage: UK all-jobs monthly series, the UK jobs rising and falling fastest (3 months vs a year earlier, at least 1,500 adverts a year earlier) | 4 KB |
 | `occupation/{soc4}.json` | one exact job: **monthly** for the UK and regions (Table 3); **quarterly** for every place (Table 5 for local authorities and London; whole quarters of Table 3 for the UK and other regions, marked `derived`) | up to 200 KB |
 | `group/{soc3}.json` | one 3-digit job group: **monthly** for every local authority (Table 4). Feeds the Monthly view of a local authority | up to 290 KB |
-| `location/{slug}.json` | one place, every job (rankings). **Deferred to Phase 5** with the ranking pages | – |
+| `location/{slug}.json` | one place, every job, latest comparisons only (ranking pages): monthly rows are exact jobs for the UK and regions and 3-digit groups for local authorities; quarterly rows are exact jobs. Plus the all-jobs total where ONS publishes one (UK, local authorities, London) | up to 65 KB |
 
-First real export (2026-10-09): 519 files, 96 MB, 59 seconds. Well inside the Workers static-asset limits (20,000 files, 25 MiB each).
+First real export (2026-10-09): 519 files, 96 MB, 59 seconds. With location files (2026-10-10): 860 files, 111 MB, about 35 seconds. Well inside the Workers static-asset limits (20,000 files, 25 MiB each).
 
 Every series is an array aligned to the shard's `months` / `quarters` span, with `null` where ONS withheld the figure, plus its comparisons (`m`, see §6). A place with no figures at all has `m: null`.
+
+**Search** reads `search.json` straight from the static assets in the browser (fetched when someone first focuses a search box), so typing costs no Worker CPU. Without JavaScript the form submits to the homepage loader, which matches the text with the same code (`app/lib/search.ts`) and redirects.
 
 **The result page needs at most two shards:** `occupation/2134.json` (Quarterly view, and Monthly for the UK and regions) and, for a local authority's Monthly view, `group/213.json`. Each one also holds every comparison place.
 

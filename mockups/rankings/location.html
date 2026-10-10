@@ -1,0 +1,63 @@
+<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ranking mockup · one place</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=block"><style>/* Ranking page mockups: same tokens and look as mockups/design.html (Ticker, Lexend, light). Real ONS figures. */
+:root{--bg:#eef1f4;--surface:#fff;--surface-2:#f5f7f9;--ink:#0b1220;--ink-2:#3b4659;--ink-3:#566175;--rule:#dbe1e8;
+  --up:#167a3e;--up-bg:#ddf2e5;--down:#c0262d;--down-bg:#fbe0e1;--flat:#4b5563;--flat-bg:#eceff3;--missing:#8a94a3}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font:300 16px/1.5 Lexend,system-ui,sans-serif;font-feature-settings:"tnum"}
+h1,h2,p{margin:0}h1,h2{font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:16px}@media(min-width:720px){.wrap{padding-inline:32px}}
+.hdr{background:var(--surface);border-bottom:1px solid var(--rule)}.hdr .wrap{display:flex;align-items:center;gap:12px;min-height:60px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:17px}.logo .mk{font-size:11px;border:1px solid var(--rule);border-radius:6px;padding:2px 6px;color:var(--ink-2)}.logo i{font-style:normal;color:var(--ink-3);font-weight:400}
+.pill{margin-left:auto;min-height:40px;display:flex;align-items:center;padding:0 14px;border:1px solid var(--rule);border-radius:999px;background:var(--surface-2);font-size:14px;max-width:55%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb{padding-top:22px;font-size:13.5px;color:var(--ink-3)}
+h1{font-size:clamp(26px,4vw,38px);line-height:1.1;letter-spacing:-.025em;margin-top:6px}
+.sub{margin-top:6px;color:var(--ink-3);font-size:14.5px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:12px}
+.total{display:grid;gap:14px;padding:20px 22px;margin-top:18px}@media(min-width:720px){.total{grid-template-columns:1fr auto;align-items:center}}
+.lbl{font-size:13px;color:var(--ink-3)}.big{font-size:44px;font-weight:600;letter-spacing:-.03em;line-height:1.05;margin:4px 0 2px}
+.s{font-size:13.5px}.muted{color:var(--ink-3)}
+.chip{display:inline-flex;gap:6px;border-radius:999px;padding:5px 13px;font-weight:500;font-size:15px}.chip.up{background:var(--up-bg);color:var(--up)}.chip.down{background:var(--down-bg);color:var(--down)}
+.banner{margin-top:12px;padding:12px 14px;border-radius:8px;background:var(--surface);border:1px solid var(--rule);font-size:14.5px;color:var(--ink-2)}
+.banner b{font-weight:500}
+.bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin-top:22px}
+.bar+.bar{margin-top:10px}.bar h2{font-size:19px}
+.tabs{display:flex;gap:4px;border:1px solid var(--rule);border-radius:999px;padding:3px;background:var(--surface)}
+.tabs button{all:unset;min-height:34px;padding:0 12px;display:flex;align-items:center;border-radius:999px;font-size:14px;color:var(--ink-2)}
+.tabs button.on{background:var(--ink);color:var(--bg)}
+.tbl{margin-top:10px;padding:4px 16px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{font-weight:400;font-size:13px;color:var(--ink-3);text-align:left;padding:9px 8px 9px 0;border-bottom:1px solid var(--rule)}
+td{padding:10px 8px 10px 0;border-bottom:1px solid var(--rule);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.n{text-align:right;white-space:nowrap}.rk{width:30px}.tr{white-space:nowrap;padding-left:14px}
+td .up,.up{color:var(--up)}td .down,.down{color:var(--down)}.flat{color:var(--flat)}.na{color:var(--ink-3)}
+td .up,td .down{font-weight:500}.tw{font-size:14px;font-weight:500}
+.tag{display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--missing);background:var(--surface-2);border-radius:999px;padding:1px 9px;font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.i{display:inline-grid;place-items:center;width:17px;height:17px;margin-left:5px;border-radius:50%;border:1.5px solid var(--ink-3);color:var(--ink-3);font-size:10.5px;font-weight:600;vertical-align:middle}
+.pager{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:14.5px}
+.pager span{display:flex;gap:14px;color:var(--ink-2)}.pager b{background:var(--ink);color:var(--bg);border-radius:999px;padding:2px 10px;font-weight:500}
+.pager button{all:unset;padding:8px 14px;border:1px solid var(--rule);border-radius:999px;background:var(--surface);font-size:14px}.pager button[disabled]{opacity:.4}
+.note{margin-top:10px;font-size:13px;color:var(--ink-3);max-width:80ch}
+.foot{padding-block:28px 40px;font-size:13px;color:var(--ink-3)}
+@media(max-width:560px){.tr{display:none}.rk{display:none}.pill{max-width:50%}.sort button{padding:0 9px;font-size:13px}.big{font-size:38px}}
+.tw-m{display:none}
+@media(max-width:560px){.tw-m{display:block;margin-top:1px}.tw-m .tw{font-size:12.5px}}
+.logo i{margin-left:-8px}
+.pager{flex-wrap:wrap;gap:10px}
+.pager .per{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-3)}
+.pager .per .tabs{padding:2px}.pager .per .tabs button{min-height:28px;padding:0 10px;font-size:13.5px;border:0;background:none}
+.pager .per .tabs button.on{background:var(--ink);color:var(--bg)}
+@media(max-width:560px){.pager .per{order:3;width:100%;justify-content:center}}
+</style></head><body><header class="hdr"><div class="wrap"><span class="logo"><span class="mk">▲▼</span>isthemarket<i>cooked</i></span><span class="pill">Leeds</span></div></header><main class="wrap">
+<p class="crumb">Places › Yorkshire and The Humber › Leeds</p>
+<h1>What jobs are being advertised in Leeds?</h1>
+<p class="sub">Leeds, Yorkshire and The Humber · new online job adverts by job · August 2026</p>
+<div class="card total"><div><p class="lbl">All jobs in Leeds · August 2026</p><p class="big">11,214</p><p class="muted s">new online job adverts</p></div>
+<div><span class="chip down">▼ Jun–Aug: 19.5% fewer than a year ago</span><p class="muted s" style="margin-top:8px">Trend: <b class="down">▼ Shrinking</b></p></div></div>
+<p class="banner">Monthly figures for Leeds only exist for broader job groups, so this lists <b>104 job groups</b>. Switch to <b>Quarterly</b> for all 412 exact jobs.</p>
+<div class="bar"><h2>Jobs in Leeds</h2><div class="tabs"><button class="on">Monthly</button><button class="">Quarterly</button></div></div>
+<div class="bar"><span class="muted s">Showing 1–10 of 104 job groups</span><div class="tabs sort"><button class="on">Most adverts</button><button>Biggest rise</button><button>Biggest fall</button></div></div>
+<div class="card tbl"><table><thead><tr><th class="rk">#</th><th>Job group</th><th class="n">Adverts</th><th class="n">Change</th><th class="tr">Trend</th></tr></thead><tbody><tr class=""><td class="rk muted">1</td><td><a>Information technology professionals</a><span class="tw-m"><span class="down tw">▼ Shrinking</span></span></td><td class="n">759</td><td class="n"><span class="down">▼ 26.9%</span></td><td class="tr"><span class="down tw">▼ Shrinking</span></td></tr><tr class=""><td class="rk muted">2</td><td><a>Sales, marketing and related associate professionals</a><span class="tw-m"><span class="down tw">▼ Shrinking</span></span></td><td class="n">710</td><td class="n"><span class="down">▼ 30.1%</span></td><td class="tr"><span class="down tw">▼ Shrinking</span></td></tr><tr class=""><td class="rk muted">3</td><td><a>Functional managers and directors</a><span class="tw-m"><span class="down tw">▼ Shrinking</span></span></td><td class="n">405</td><td class="n"><span class="down">▼ 15.2%</span></td><td class="tr"><span class="down tw">▼ Shrinking</span></td></tr><tr class=""><td class="rk muted">4</td><td><a>Legal professionals</a><span class="tw-m"><span class="down tw">▼ Shrinking</span></span></td><td class="n">353</td><td class="n"><span class="down">▼ 36.8%</span></td><td class="tr"><span class="down tw">▼ Shrinking</span></td></tr><tr class=""><td class="rk muted">5</td><td><a>Caring personal services</a><span class="tw-m"><span class="down tw">▼ Shrinking</span></span></td><td class="n">308</td><td class="n"><span class="down">▼ 14.1%</span></td><td class="tr"><span class="down tw">▼ Shrinking</span></td></tr><tr class=""><td class="rk muted">6</td><td><a>Engineering professionals</a><span class="tw-m"><span class="up tw">▲ Growing</span></span></td><td class="n">307</td><td class="n"><span class="up">▲ 33.5%</span></td><td class="tr"><span class="up tw">▲ Growing</span></td></tr><tr class=""><td class="rk muted">7</td><td><a>Administrative occupations: finance</a><span class="tw-m"><span class="down tw">▼ Shrinking</span></span></td><td class="n">291</td><td class="n"><span class="down">▼ 13.0%</span></td><td class="tr"><span class="down tw">▼ Shrinking</span></td></tr><tr class=""><td class="rk muted">8</td><td><a>Business, research and administrative professionals</a><span class="tw-m"><span class="down tw">▼ Shrinking</span></span></td><td class="n">288</td><td class="n"><span class="down">▼ 18.9%</span></td><td class="tr"><span class="down tw">▼ Shrinking</span></td></tr><tr class=""><td class="rk muted">9</td><td><a>Road transport drivers</a><span class="tw-m"><span class="flat tw">► Steady</span></span></td><td class="n">282</td><td class="n"><span class="down">▼ 0.7%</span></td><td class="tr"><span class="flat tw">► Steady</span></td></tr><tr class=""><td class="rk muted">10</td><td><a>HR, training and other vocational associate guidance professionals</a><span class="tw-m"><span class="down tw">▼ Shrinking</span></span></td><td class="n">279</td><td class="n"><span class="down">▼ 16.3%</span></td><td class="tr"><span class="down tw">▼ Shrinking</span></td></tr></tbody></table></div>
+<nav class="pager"><button disabled>‹ Previous</button><span><b>1</b> 2 3 … 11</span><span class="per">Rows per page <span class="tabs"><button class="on">10</button><button>25</button></span></span><button>Next ›</button></nav>
+<p class="note">Change compares Jun–Aug 2026 with the same 3 months a year earlier (or the single month where one is missing). Under 30 adverts we don’t show a percentage, and those jobs are left out of “Biggest rise” and “Biggest fall”.</p>
+</main><footer class="foot wrap">Source: Office for National Statistics, Labour demand volumes by SOC 2020, UK. Published 25 September 2026. Official statistics in development. Open Government Licence v3.0.</footer></body></html>
