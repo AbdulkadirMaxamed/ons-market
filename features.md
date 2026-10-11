@@ -27,7 +27,7 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [x] Chart: hatched gaps with ONS-reason callout, range tabs, "Show the numbers" table, hover/tap/arrow-key reading
 - [x] Ink-in entrance and line-drawing animation for sparkline and chart (reduced-motion safe)
 - [x] Light and dark theme (follows the device setting)
-- [x] Tests: pipeline (pytest, 73) and web (Vitest, 43: formatting, search, rankings, missing-figure reasons, result-page data)
+- [x] Tests: pipeline (pytest, 86) and web (Vitest, 51: formatting, search, rankings, missing-figure reasons, result-page data)
 
 ## Phase 4: real data
 - [x] Workbook structure validator (fails loudly on layout change)
@@ -42,7 +42,7 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 ## Approved suggestions
 - [ ] S-001 · Automated release check and import (scheduled GitHub Action, deploy only on success)
 - [ ] S-002 · Combined areas built from local authorities (Greater Manchester etc.), missing if any part is suppressed
-- [ ] S-003 · Friendly job names, search aliases and shorter URLs
+- [x] S-003 · Friendly job names, search aliases and shorter URLs: `pipeline/jobs.toml` (261 short names, ~890 aliases) checked on export; ONS name shown under headings; old URLs redirect (301); equal search matches ordered by UK advert volume
 - [ ] S-004 · Shareable result: copy-a-sentence button and Open Graph image per result page
 - [ ] S-005 · Compare two places or two jobs
 - [ ] S-007 · Share of all adverts in the area, and how it has changed

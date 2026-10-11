@@ -30,6 +30,7 @@ export type Series = { v: (number | null)[]; m: Metrics | null; derived?: true }
 export type OccupationShard = {
   soc: string;
   name: string;
+  ons: string; // ONS's official name
   slug: string;
   group: string;
   months: Span;
@@ -49,7 +50,10 @@ export type GroupShard = {
 export type PlaceType = "uk" | "region" | "lad";
 
 export type SearchIndex = {
-  occupations: { soc: string; name: string; slug: string; group: string }[];
+  // name: friendly name shown on the site; ons: ONS's official name when it differs; old: the URL slug before
+  // the friendly name, so old links redirect (pipeline/jobs.toml, S-003).
+  // pop: rank by UK adverts over the last 12 months (1 = most), to order equally good search matches.
+  occupations: { soc: string; name: string; slug: string; group: string; pop?: number; ons?: string; aliases?: string[]; old?: string }[];
   groups: Record<string, { name: string; slug: string }>;
   places: { code: string; name: string; slug: string; type: PlaceType; region: string | null }[];
 };

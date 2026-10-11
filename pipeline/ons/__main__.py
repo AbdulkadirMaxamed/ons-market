@@ -77,6 +77,8 @@ def cmd_export(args: argparse.Namespace) -> int:
         return 1
     print(f"Exported {r.files:,} files ({r.bytes / 1e6:.1f} MB) to {args.out} in {time.monotonic() - started:.0f}s")
     print(f"  {r.occupations} jobs · {r.groups} job groups · {r.places} places")
+    if r.unused_jobs:
+        print(f"  Warning: jobs.toml has entries for codes not in the data (ignored): {', '.join(r.unused_jobs)}")
     return 0
 
 

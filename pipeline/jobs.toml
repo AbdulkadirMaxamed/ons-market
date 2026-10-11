@@ -1,0 +1,1367 @@
+# Friendly job names and search aliases (S-003). One table per SOC 2020 4-digit code.
+#
+# short    everyday name used in headings, lists and the URL. It must describe the same ONS job, not a narrower
+#          or wider one; the official ONS name is always shown next to it. Leave it out when the ONS name is
+#          already short and plain.
+# aliases  words people type for this job. They only help search, so one alias may point at several jobs
+#          ("engineer", "nurse"), and search shows them all. Lower case, singular.
+#
+# Checked on every export: an unknown code, a duplicate short name or slug, or an empty entry stops the export.
+
+# 1 · Managers, directors and senior officials
+[1111]
+short = "Chief executives"
+aliases = ["ceo", "chief executive officer", "managing director", "md"]
+
+[1112]
+short = "Elected officials"
+aliases = ["councillor", "mp", "politician"]
+
+[1121]
+short = "Manufacturing managers"
+aliases = ["production manager", "factory manager", "plant manager", "operations manager"]
+
+[1122]
+short = "Construction managers"
+aliases = ["construction director", "site director", "building manager"]
+
+[1123]
+short = "Mining and energy managers"
+aliases = ["energy manager"]
+
+[1131]
+short = "Finance directors"
+aliases = ["cfo", "finance manager", "financial controller", "finance director"]
+
+[1132]
+short = "Marketing and sales directors"
+aliases = ["marketing director", "sales director", "head of marketing", "cmo"]
+
+[1133]
+short = "Communications directors"
+aliases = ["pr director", "head of communications"]
+
+[1134]
+short = "Purchasing managers"
+aliases = ["procurement manager", "head of procurement"]
+
+[1135]
+short = "Charity managers"
+aliases = ["charity director", "charity manager"]
+
+[1136]
+short = "HR managers"
+aliases = ["human resources manager", "hr director", "head of hr", "people manager"]
+
+[1137]
+short = "IT directors"
+aliases = ["cto", "cio", "head of it", "technology director"]
+
+[1139]
+short = "Other directors and managers"
+
+[1140]
+short = "Logistics directors"
+aliases = ["supply chain director", "transport director"]
+
+[1150]
+short = "Retail managers"
+aliases = ["store manager", "shop manager", "retail manager", "area manager"]
+
+[1161]
+short = "Armed forces officers"
+aliases = ["army officer", "military officer", "naval officer", "raf officer"]
+
+[1163]
+short = "Senior fire, ambulance and prison officers"
+
+[1171]
+short = "Health service managers"
+aliases = ["nhs manager", "hospital manager"]
+
+[1172]
+short = "Social services managers"
+
+[1211]
+short = "Farm managers"
+aliases = ["farm manager", "horticulture manager"]
+
+[1212]
+short = "Forestry and fishing managers"
+
+[1221]
+short = "Hotel managers"
+aliases = ["hotel manager", "accommodation manager"]
+
+[1222]
+short = "Restaurant managers"
+aliases = ["restaurant manager", "catering manager"]
+
+[1223]
+short = "Pub managers"
+aliases = ["publican", "pub manager", "landlord", "bar manager"]
+
+[1224]
+short = "Leisure and sports managers"
+aliases = ["gym manager", "leisure centre manager"]
+
+[1225]
+short = "Travel agency managers"
+
+[1231]
+aliases = ["practice manager", "gp practice manager"]
+
+[1232]
+short = "Care home managers"
+aliases = ["care manager", "registered manager", "care home manager"]
+
+[1233]
+short = "Nursery owners"
+aliases = ["nursery owner"]
+
+[1241]
+short = "Transport managers"
+aliases = ["fleet manager", "transport manager"]
+
+[1242]
+short = "Warehouse managers"
+aliases = ["warehouse manager", "depot manager"]
+
+[1243]
+short = "Logistics managers"
+aliases = ["supply chain manager", "logistics manager"]
+
+[1251]
+short = "Property and estate managers"
+aliases = ["property manager", "housing manager", "facilities manager", "estate manager"]
+
+[1252]
+short = "Garage managers"
+
+[1253]
+short = "Salon managers"
+aliases = ["salon owner", "salon manager"]
+
+[1254]
+short = "Waste and environmental services managers"
+
+[1255]
+short = "Creative industry managers"
+aliases = ["studio manager", "creative director"]
+
+[1256]
+short = "Betting shop managers"
+
+[1257]
+short = "Hire services managers"
+
+[1258]
+short = "Consultancy directors"
+
+[1259]
+short = "Other services managers"
+
+# 2 · Professional
+[2111]
+aliases = ["chemist", "scientist"]
+
+[2112]
+aliases = ["biologist", "scientist", "microbiologist"]
+
+[2113]
+aliases = ["biochemist", "biomedical scientist", "scientist"]
+
+[2114]
+aliases = ["physicist", "geologist", "scientist"]
+
+[2115]
+aliases = ["sociologist", "historian", "researcher"]
+
+[2119]
+short = "Other science professionals"
+
+[2121]
+aliases = ["engineer", "civil engineer", "structural engineer"]
+
+[2122]
+aliases = ["engineer", "mechanical engineer"]
+
+[2123]
+aliases = ["engineer", "electrical engineer"]
+
+[2124]
+aliases = ["engineer", "electronics engineer"]
+
+[2125]
+aliases = ["engineer", "process engineer", "manufacturing engineer"]
+
+[2126]
+aliases = ["engineer", "aerospace engineer", "aeronautical engineer"]
+
+[2127]
+short = "Engineering project managers"
+aliases = ["engineering project manager", "project engineer"]
+
+[2129]
+short = "Other engineers"
+aliases = ["engineer"]
+
+[2131]
+aliases = ["it project manager", "technical project manager", "delivery manager", "scrum master"]
+
+[2132]
+aliases = ["it manager", "head of it", "infrastructure manager"]
+
+[2133]
+short = "IT business analysts and architects"
+aliases = ["business analyst", "solutions architect", "systems analyst", "enterprise architect", "it architect"]
+
+[2134]
+short = "Software developers"
+aliases = ["software engineer", "programmer", "developer", "dev", "coder", "web developer", "frontend developer",
+           "backend developer", "full stack developer", "software"]
+
+[2135]
+short = "Cyber security professionals"
+aliases = ["cyber security", "cybersecurity", "security analyst", "penetration tester", "infosec"]
+
+[2136]
+short = "Software testers"
+aliases = ["tester", "qa", "qa engineer", "test engineer", "software tester"]
+
+[2137]
+short = "Network engineers"
+aliases = ["network engineer", "network administrator", "devops", "cloud engineer"]
+
+[2139]
+short = "Other IT professionals"
+aliases = ["it", "it professional", "data engineer"]
+
+[2141]
+short = "Web designers"
+aliases = ["web designer", "ux designer", "ui designer", "web developer", "designer"]
+
+[2142]
+short = "Graphic designers"
+aliases = ["graphic designer", "designer", "multimedia designer", "motion designer"]
+
+[2151]
+aliases = ["conservation officer", "ecologist"]
+
+[2152]
+aliases = ["environmental consultant", "sustainability consultant"]
+
+[2161]
+short = "R&D managers"
+aliases = ["research manager", "r and d manager"]
+
+[2162]
+short = "Researchers"
+aliases = ["researcher", "research assistant", "research fellow"]
+
+[2211]
+short = "GPs"
+aliases = ["gp", "doctor", "general practitioner", "family doctor"]
+
+[2212]
+short = "Specialist doctors"
+aliases = ["doctor", "consultant", "surgeon", "anaesthetist", "psychiatrist", "hospital doctor"]
+
+[2221]
+aliases = ["physio", "physiotherapist"]
+
+[2222]
+aliases = ["ot", "occupational therapist"]
+
+[2223]
+short = "Speech and language therapists"
+aliases = ["speech therapist", "salt"]
+
+[2224]
+short = "Psychotherapists and CBT therapists"
+aliases = ["therapist", "psychotherapist", "cbt therapist"]
+
+[2225]
+aliases = ["psychologist", "clinical psychologist"]
+
+[2226]
+aliases = ["psychologist"]
+
+[2229]
+short = "Other therapists"
+aliases = ["therapist"]
+
+[2231]
+short = "Midwives"
+aliases = ["midwife", "nurse"]
+
+[2232]
+short = "Community nurses"
+aliases = ["nurse", "district nurse", "health visitor", "community nurse"]
+
+[2233]
+short = "Specialist nurses"
+aliases = ["nurse", "specialist nurse"]
+
+[2234]
+short = "Nurse practitioners"
+aliases = ["nurse", "nurse practitioner", "advanced nurse practitioner"]
+
+[2235]
+short = "Mental health nurses"
+aliases = ["nurse", "mental health nurse", "rmn", "psychiatric nurse"]
+
+[2236]
+short = "Children's nurses"
+aliases = ["nurse", "paediatric nurse", "childrens nurse"]
+
+[2237]
+short = "Other registered nurses"
+aliases = ["nurse", "registered nurse", "rgn", "staff nurse", "ward nurse"]
+
+[2240]
+aliases = ["vet", "veterinary surgeon"]
+
+[2251]
+aliases = ["pharmacist", "chemist"]
+
+[2252]
+aliases = ["optician", "optometrist"]
+
+[2253]
+short = "Dentists"
+aliases = ["dentist", "dental surgeon", "orthodontist"]
+
+[2254]
+short = "Radiographers"
+aliases = ["radiographer", "sonographer"]
+
+[2255]
+aliases = ["paramedic"]
+
+[2256]
+aliases = ["chiropodist", "podiatrist"]
+
+[2259]
+short = "Other health professionals"
+aliases = ["dietitian", "audiologist"]
+
+[2311]
+short = "University lecturers"
+aliases = ["lecturer", "professor", "university lecturer", "academic"]
+
+[2312]
+short = "Further education teachers"
+aliases = ["fe teacher", "college lecturer", "college teacher", "teacher"]
+
+[2313]
+short = "Secondary school teachers"
+aliases = ["teacher", "secondary teacher", "high school teacher", "maths teacher", "science teacher", "english teacher"]
+
+[2314]
+short = "Primary school teachers"
+aliases = ["teacher", "primary teacher"]
+
+[2315]
+short = "Nursery teachers"
+aliases = ["teacher", "nursery teacher", "early years teacher"]
+
+[2316]
+short = "Special needs teachers"
+aliases = ["teacher", "send teacher", "sen teacher"]
+
+[2317]
+short = "English as a foreign language teachers"
+aliases = ["tefl", "esl teacher", "efl teacher", "teacher"]
+
+[2319]
+short = "Other teachers"
+aliases = ["teacher", "tutor", "music teacher"]
+
+[2321]
+short = "Head teachers"
+aliases = ["headteacher", "head teacher", "principal"]
+
+[2322]
+aliases = ["education manager"]
+
+[2323]
+short = "Education advisers and inspectors"
+aliases = ["ofsted inspector", "school inspector"]
+
+[2324]
+short = "Nursery managers"
+aliases = ["nursery manager", "early years manager"]
+
+[2329]
+short = "Other education professionals"
+
+[2411]
+aliases = ["barrister", "judge"]
+
+[2412]
+short = "Solicitors"
+aliases = ["solicitor", "lawyer", "legal counsel", "in-house lawyer"]
+
+[2419]
+short = "Other legal professionals"
+
+[2421]
+short = "Accountants"
+aliases = ["accountant", "chartered accountant", "aca", "acca", "auditor"]
+
+[2422]
+short = "Finance and investment analysts"
+aliases = ["financial analyst", "investment analyst", "financial adviser", "financial advisor", "ifa", "analyst"]
+
+[2423]
+short = "Tax advisers"
+aliases = ["tax adviser", "tax advisor", "tax consultant", "tax manager"]
+
+[2431]
+short = "Management consultants"
+aliases = ["consultant", "management consultant", "business analyst"]
+
+[2432]
+short = "Marketing managers"
+aliases = ["marketing manager", "commercial manager", "brand manager", "product manager"]
+
+[2433]
+short = "Actuaries, economists and statisticians"
+aliases = ["actuary", "economist", "statistician", "data scientist"]
+
+[2434]
+short = "Business researchers"
+aliases = ["market researcher", "research analyst"]
+
+[2435]
+short = "Chartered company secretaries"
+
+[2439]
+short = "Other business professionals"
+
+[2440]
+short = "Business project managers"
+aliases = ["project manager", "programme manager", "pmo"]
+
+[2451]
+aliases = ["architect"]
+
+[2452]
+short = "Planning officers and architectural technologists"
+aliases = ["town planner", "planning officer", "planner", "architectural technologist"]
+
+[2453]
+aliases = ["qs", "quantity surveyor", "surveyor"]
+
+[2454]
+aliases = ["surveyor", "chartered surveyor", "building surveyor"]
+
+[2455]
+short = "Construction project managers"
+aliases = ["construction project manager", "site manager", "project manager"]
+
+[2461]
+aliases = ["social worker"]
+
+[2462]
+aliases = ["probation officer"]
+
+[2463]
+aliases = ["vicar", "priest", "imam", "minister", "chaplain"]
+
+[2464]
+short = "Youth workers"
+aliases = ["youth worker"]
+
+[2469]
+short = "Other welfare professionals"
+
+[2471]
+aliases = ["librarian"]
+
+[2472]
+short = "Archivists and curators"
+aliases = ["archivist", "curator", "conservator"]
+
+[2481]
+short = "Quality control engineers"
+aliases = ["quality engineer", "planning engineer", "engineer"]
+
+[2482]
+short = "Quality assurance and regulatory professionals"
+aliases = ["quality manager", "regulatory affairs", "compliance officer"]
+
+[2483]
+short = "Environmental health officers"
+aliases = ["environmental health officer", "eho"]
+
+[2491]
+short = "Editors"
+aliases = ["editor"]
+
+[2492]
+short = "Journalists"
+aliases = ["journalist", "reporter"]
+
+[2493]
+short = "PR professionals"
+aliases = ["pr", "public relations", "pr officer", "communications officer"]
+
+[2494]
+short = "Advertising account managers and creative directors"
+aliases = ["account manager", "creative director", "advertising"]
+
+# 3 · Associate professional and technical
+[3111]
+aliases = ["lab technician", "laboratory technician"]
+
+[3112]
+aliases = ["electronics technician", "electrical technician"]
+
+[3113]
+aliases = ["engineering technician"]
+
+[3114]
+short = "Building and civil engineering technicians"
+
+[3116]
+short = "Production technicians"
+
+[3119]
+short = "Other science and engineering technicians"
+
+[3120]
+short = "CAD and architectural technicians"
+aliases = ["cad technician", "draughtsman", "draughtsperson", "cad designer"]
+
+[3131]
+aliases = ["it technician", "systems administrator", "sysadmin"]
+
+[3132]
+short = "IT support technicians"
+aliases = ["it support", "helpdesk", "service desk", "desktop support", "it technician"]
+
+[3133]
+short = "Database administrators"
+aliases = ["dba", "database administrator", "web content editor"]
+
+[3211]
+aliases = ["dispensing optician", "optician"]
+
+[3212]
+aliases = ["pharmacy technician"]
+
+[3213]
+aliases = ["dental technician", "medical technician"]
+
+[3214]
+short = "Complementary therapists"
+aliases = ["massage therapist", "acupuncturist", "osteopath"]
+
+[3219]
+short = "Other health associate professionals"
+
+[3222]
+short = "Child and early years officers"
+
+[3223]
+aliases = ["housing officer"]
+
+[3224]
+aliases = ["counsellor"]
+
+[3229]
+short = "Other welfare and housing officers"
+
+[3231]
+short = "Higher level teaching assistants"
+aliases = ["hlta", "teaching assistant"]
+
+[3232]
+short = "Early years practitioners"
+aliases = ["nursery practitioner", "early years practitioner", "nursery nurse"]
+
+[3240]
+aliases = ["veterinary nurse", "vet nurse"]
+
+[3311]
+short = "Armed forces (other ranks)"
+aliases = ["soldier", "army", "military"]
+
+[3312]
+short = "Police officers"
+aliases = ["police officer", "police", "detective", "pc"]
+
+[3313]
+short = "Firefighters"
+aliases = ["firefighter", "fireman"]
+
+[3314]
+short = "Prison officers"
+aliases = ["prison officer"]
+
+[3319]
+short = "Other protective services"
+
+[3412]
+short = "Writers and translators"
+aliases = ["writer", "copywriter", "translator", "author", "content writer"]
+
+[3413]
+aliases = ["actor", "presenter", "entertainer"]
+
+[3416]
+short = "Arts producers and directors"
+aliases = ["producer", "film director", "arts officer"]
+
+[3417]
+short = "Photographers and camera operators"
+aliases = ["photographer", "videographer", "camera operator", "sound engineer"]
+
+[3422]
+short = "Fashion designers"
+aliases = ["fashion designer", "designer"]
+
+[3429]
+short = "Other designers"
+aliases = ["product designer", "designer"]
+
+[3432]
+short = "Sports coaches"
+aliases = ["coach", "sports coach", "swimming instructor"]
+
+[3433]
+short = "Fitness instructors"
+aliases = ["personal trainer", "pt", "fitness instructor", "yoga instructor"]
+
+[3511]
+short = "Pilots and air traffic controllers"
+aliases = ["pilot", "air traffic controller"]
+
+[3512]
+short = "Ship officers"
+
+[3520]
+short = "Paralegals and legal executives"
+aliases = ["paralegal", "legal executive", "conveyancer"]
+
+[3532]
+aliases = ["underwriter"]
+
+[3533]
+short = "Accounting technicians"
+aliases = ["accounts assistant", "accounting technician", "assistant accountant", "aat"]
+
+[3534]
+aliases = ["relationship manager"]
+
+[3541]
+short = "Estimators and valuers"
+aliases = ["estimator", "valuer", "loss adjuster", "claims assessor"]
+
+[3543]
+aliases = ["project coordinator", "project administrator", "project support"]
+
+[3544]
+aliases = ["data analyst", "analyst", "data", "bi analyst", "insight analyst"]
+
+[3549]
+short = "Other business associate professionals"
+
+[3551]
+short = "Buyers"
+aliases = ["buyer", "procurement officer", "purchasing officer"]
+
+[3552]
+short = "Sales executives"
+aliases = ["sales executive", "sales", "account executive", "sales representative", "sales rep"]
+
+[3553]
+aliases = ["merchandiser"]
+
+[3554]
+short = "Marketing executives"
+aliases = ["marketing executive", "marketing assistant", "digital marketing", "social media manager", "seo"]
+
+[3555]
+short = "Estate agents"
+aliases = ["estate agent", "letting agent", "lettings negotiator"]
+
+[3556]
+short = "Business development managers"
+aliases = ["bdm", "business development manager", "account manager", "sales manager"]
+
+[3557]
+short = "Events managers"
+aliases = ["event manager", "event planner", "wedding planner"]
+
+[3560]
+short = "Public services associate professionals"
+
+[3571]
+short = "HR officers"
+aliases = ["hr officer", "hr advisor", "hr adviser", "hr business partner", "recruiter"]
+
+[3572]
+short = "Careers advisers"
+aliases = ["careers adviser", "careers advisor"]
+
+[3573]
+short = "IT trainers"
+
+[3574]
+short = "Other trainers"
+aliases = ["trainer", "assessor"]
+
+[3581]
+short = "Standards inspectors"
+aliases = ["trading standards officer", "building control officer"]
+
+[3582]
+short = "Health and safety officers"
+aliases = ["health and safety", "hse", "health and safety manager"]
+
+# 4 · Administrative and secretarial
+[4111]
+short = "Civil service administrators"
+aliases = ["civil servant", "civil service"]
+
+[4112]
+short = "Council administrators"
+aliases = ["council", "local government"]
+
+[4113]
+short = "Charity officers"
+
+[4122]
+short = "Bookkeepers and payroll clerks"
+aliases = ["bookkeeper", "payroll", "payroll administrator", "wages clerk"]
+
+[4123]
+short = "Bank and post office clerks"
+aliases = ["bank clerk", "cashier"]
+
+[4124]
+aliases = ["finance officer", "finance assistant"]
+
+[4129]
+short = "Other finance administrators"
+aliases = ["accounts payable", "accounts receivable", "purchase ledger"]
+
+[4131]
+short = "Records clerks"
+aliases = ["records clerk", "filing clerk"]
+
+[4132]
+short = "Pensions and insurance clerks"
+aliases = ["pensions administrator", "claims handler"]
+
+[4133]
+short = "Stock control clerks"
+aliases = ["stock controller", "inventory controller"]
+
+[4134]
+short = "Transport and distribution clerks"
+aliases = ["transport planner", "shipping clerk"]
+
+[4135]
+short = "Library assistants"
+aliases = ["library assistant"]
+
+[4136]
+short = "HR administrators"
+aliases = ["hr administrator", "hr assistant"]
+
+[4141]
+aliases = ["office manager"]
+
+[4143]
+aliases = ["customer service manager"]
+
+[4151]
+aliases = ["sales administrator", "sales coordinator"]
+
+[4152]
+aliases = ["data entry"]
+
+[4159]
+short = "Other administrators"
+aliases = ["administrator", "admin", "office administrator", "admin assistant", "clerk"]
+
+[4211]
+aliases = ["medical secretary"]
+
+[4212]
+aliases = ["legal secretary"]
+
+[4213]
+aliases = ["school secretary"]
+
+[4214]
+short = "Company secretaries and administrators"
+aliases = ["company secretary"]
+
+[4215]
+short = "Personal assistants and secretaries"
+aliases = ["pa", "personal assistant", "executive assistant", "secretary"]
+
+[4216]
+aliases = ["receptionist", "front of house"]
+
+[4217]
+short = "Typists"
+aliases = ["typist", "transcriber"]
+
+# 5 · Skilled trades
+[5113]
+short = "Gardeners"
+aliases = ["gardener", "landscaper", "landscape gardener"]
+
+[5114]
+short = "Groundskeepers and greenkeepers"
+aliases = ["groundsman", "groundskeeper", "greenkeeper"]
+
+[5119]
+short = "Other farming and fishing trades"
+
+[5212]
+short = "Smiths, moulders and metal plate workers"
+aliases = ["blacksmith", "boilermaker"]
+
+[5213]
+short = "Welders"
+aliases = ["welder", "fabricator"]
+
+[5214]
+aliases = ["pipe fitter", "pipefitter"]
+
+[5221]
+short = "Machinists and setters"
+aliases = ["cnc machinist", "machinist", "cnc"]
+
+[5222]
+short = "Toolmakers"
+aliases = ["toolmaker"]
+
+[5223]
+short = "Maintenance fitters"
+aliases = ["maintenance engineer", "maintenance fitter", "mechanical fitter", "fitter"]
+
+[5224]
+short = "Precision instrument makers"
+
+[5225]
+short = "Air conditioning and refrigeration engineers"
+aliases = ["hvac", "refrigeration engineer", "air conditioning engineer", "f gas"]
+
+[5231]
+short = "Mechanics"
+aliases = ["mechanic", "vehicle technician", "car mechanic", "motor mechanic", "auto electrician"]
+
+[5232]
+short = "Panel beaters and body repairers"
+aliases = ["panel beater", "body repairer", "coachbuilder"]
+
+[5233]
+short = "Vehicle painters"
+aliases = ["paint sprayer", "vehicle painter"]
+
+[5234]
+short = "Aircraft engineers"
+aliases = ["aircraft engineer", "aircraft mechanic", "aircraft technician"]
+
+[5235]
+short = "Boat and ship builders"
+aliases = ["shipbuilder", "shipwright"]
+
+[5236]
+short = "Rail vehicle builders and repairers"
+
+[5241]
+short = "Electricians"
+aliases = ["electrician", "sparky", "spark", "electrical fitter"]
+
+[5242]
+short = "Telecoms engineers"
+aliases = ["telecoms engineer", "cable installer", "fibre engineer"]
+
+[5243]
+short = "TV and audio repairers"
+
+[5244]
+short = "Computer installers and repairers"
+aliases = ["computer engineer", "field engineer"]
+
+[5245]
+short = "Security system installers"
+aliases = ["alarm engineer", "cctv engineer", "security engineer"]
+
+[5246]
+short = "Electrical maintenance engineers"
+aliases = ["electrical engineer", "lift engineer", "field service engineer"]
+
+[5249]
+short = "Other electrical trades"
+
+[5250]
+short = "Metal and electrical trades supervisors"
+
+[5311]
+aliases = ["steel erector"]
+
+[5312]
+short = "Stonemasons"
+aliases = ["stonemason", "mason"]
+
+[5313]
+aliases = ["bricklayer", "brickie"]
+
+[5314]
+short = "Roofers"
+aliases = ["roofer", "slater"]
+
+[5315]
+short = "Plumbers and heating engineers"
+aliases = ["plumber", "heating engineer", "gas engineer", "gas fitter", "boiler engineer"]
+
+[5316]
+short = "Carpenters and joiners"
+aliases = ["carpenter", "joiner", "chippy"]
+
+[5317]
+short = "Glaziers and window fitters"
+aliases = ["glazier", "window fitter"]
+
+[5319]
+short = "Other construction trades"
+aliases = ["builder", "handyman", "construction"]
+
+[5321]
+aliases = ["plasterer", "dry liner", "dryliner"]
+
+[5322]
+short = "Floorers and tilers"
+aliases = ["tiler", "floor layer", "carpet fitter"]
+
+[5323]
+aliases = ["painter", "decorator"]
+
+[5330]
+short = "Construction supervisors"
+aliases = ["site supervisor", "foreman", "site manager"]
+
+[5419]
+short = "Other textile trades"
+
+[5421]
+aliases = ["pre press"]
+
+[5431]
+aliases = ["butcher"]
+
+[5432]
+short = "Bakers"
+aliases = ["baker", "pastry chef"]
+
+[5433]
+aliases = ["fishmonger"]
+
+[5434]
+aliases = ["chef", "cook", "sous chef", "head chef", "commis chef", "kitchen"]
+
+[5435]
+aliases = ["cook", "school cook"]
+
+[5436]
+aliases = ["catering manager", "bar manager", "kitchen manager"]
+
+[5441]
+short = "Glass and ceramics makers"
+
+[5442]
+short = "Furniture makers"
+aliases = ["cabinet maker", "furniture maker"]
+
+[5443]
+aliases = ["florist"]
+
+[5449]
+short = "Other skilled trades"
+
+# 6 · Caring, leisure and other service
+[6111]
+short = "Nursery assistants"
+aliases = ["nursery assistant", "childcare assistant", "nursery nurse"]
+
+[6112]
+aliases = ["teaching assistant", "ta", "classroom assistant"]
+
+[6113]
+aliases = ["learning support assistant", "lsa", "send support"]
+
+[6114]
+aliases = ["childminder"]
+
+[6116]
+aliases = ["nanny", "au pair"]
+
+[6117]
+aliases = ["playworker", "play worker"]
+
+[6121]
+aliases = ["pest control"]
+
+[6129]
+short = "Animal care workers"
+aliases = ["dog groomer", "kennel assistant", "dog walker", "animal care"]
+
+[6131]
+short = "Healthcare assistants"
+aliases = ["healthcare assistant", "hca", "nursing assistant", "care assistant", "nursing associate"]
+
+[6132]
+short = "Ambulance staff"
+aliases = ["ambulance technician", "emergency care assistant"]
+
+[6133]
+aliases = ["dental nurse"]
+
+[6134]
+short = "Residential wardens"
+aliases = ["warden", "houseparent"]
+
+[6135]
+short = "Care workers"
+aliases = ["carer", "care worker", "care assistant", "home carer", "support worker", "domiciliary carer"]
+
+[6136]
+aliases = ["senior carer", "senior care worker", "senior support worker"]
+
+[6137]
+aliases = ["care escort", "passenger assistant"]
+
+[6138]
+short = "Funeral and mortuary workers"
+aliases = ["undertaker", "funeral director", "mortuary assistant"]
+
+[6211]
+aliases = ["lifeguard", "leisure assistant", "gym instructor"]
+
+[6213]
+aliases = ["cabin crew", "flight attendant", "air steward"]
+
+[6214]
+aliases = ["train guard", "conductor", "station assistant"]
+
+[6219]
+short = "Other leisure and travel services"
+
+[6221]
+aliases = ["hairdresser", "barber", "hair stylist", "stylist"]
+
+[6222]
+short = "Beauticians"
+aliases = ["beautician", "beauty therapist", "nail technician", "makeup artist"]
+
+[6231]
+short = "Housekeepers"
+aliases = ["housekeeper"]
+
+[6232]
+aliases = ["caretaker", "janitor"]
+
+[6240]
+short = "Cleaning supervisors"
+aliases = ["cleaning supervisor", "cleaning manager"]
+
+[6250]
+short = "B&B and guest house owners"
+
+[6311]
+short = "PCSOs"
+aliases = ["pcso", "police community support officer"]
+
+[6312]
+short = "Parking and civil enforcement officers"
+aliases = ["traffic warden", "parking attendant", "civil enforcement officer"]
+
+# 7 · Sales and customer service
+[7111]
+short = "Retail assistants"
+aliases = ["sales assistant", "retail assistant", "shop assistant", "retail", "shop worker"]
+
+[7112]
+short = "Cashiers"
+aliases = ["cashier", "checkout operator", "till operator"]
+
+[7113]
+short = "Telesales"
+aliases = ["telesales", "telemarketer", "cold caller"]
+
+[7114]
+short = "Pharmacy and optical assistants"
+aliases = ["pharmacy assistant", "dispensary assistant", "optical assistant"]
+
+[7115]
+short = "Car sales"
+aliases = ["car salesman", "car sales", "vehicle sales", "parts advisor"]
+
+[7121]
+short = "Collection agents"
+
+[7122]
+short = "Debt collectors"
+aliases = ["debt collector", "bailiff", "enforcement agent"]
+
+[7123]
+short = "Van sales"
+aliases = ["milkman", "van sales"]
+
+[7124]
+short = "Market traders"
+aliases = ["market trader", "street trader"]
+
+[7125]
+short = "Visual merchandisers"
+aliases = ["visual merchandiser"]
+
+[7129]
+short = "Other sales jobs"
+
+[7131]
+short = "Shopkeepers"
+aliases = ["shopkeeper", "shop owner"]
+
+[7132]
+short = "Retail supervisors"
+aliases = ["retail supervisor", "shift supervisor", "assistant store manager", "team leader"]
+
+[7211]
+short = "Call centre workers"
+aliases = ["call centre", "contact centre", "customer service advisor", "customer service adviser", "call handler"]
+
+[7213]
+aliases = ["control room operator", "dispatcher"]
+
+[7219]
+short = "Other customer service jobs"
+aliases = ["customer service", "customer service assistant", "customer support"]
+
+[7220]
+aliases = ["customer service team leader", "call centre supervisor"]
+
+# 8 · Process, plant and machine operatives
+[8111]
+short = "Food process operatives"
+aliases = ["food production operative", "food factory"]
+
+[8119]
+short = "Other process operatives"
+aliases = ["process operator", "production operative"]
+
+[8120]
+short = "Metal machine operatives"
+
+[8132]
+short = "Mining and quarry workers"
+aliases = ["miner", "quarry worker"]
+
+[8133]
+short = "Energy plant operatives"
+
+[8134]
+short = "Water treatment operatives"
+aliases = ["water treatment"]
+
+[8139]
+short = "Other machine operatives"
+aliases = ["machine operator"]
+
+[8141]
+short = "Electrical assemblers"
+
+[8142]
+short = "Vehicle and metal assemblers"
+aliases = ["assembler", "assembly operative"]
+
+[8143]
+short = "Inspectors and testers"
+aliases = ["quality inspector", "qc inspector"]
+
+[8145]
+short = "Tyre and windscreen fitters"
+aliases = ["tyre fitter", "windscreen fitter"]
+
+[8146]
+aliases = ["sewing machinist", "seamstress"]
+
+[8149]
+short = "Other assemblers and operatives"
+aliases = ["production operative", "factory worker", "general operative"]
+
+[8151]
+short = "Scaffolders and riggers"
+aliases = ["scaffolder", "rigger"]
+
+[8152]
+aliases = ["road worker", "highways operative", "tarmac"]
+
+[8153]
+short = "Rail track workers"
+aliases = ["track worker", "rail maintenance", "trackman"]
+
+[8159]
+short = "Other construction operatives"
+aliases = ["labourer", "construction operative", "plant operator"]
+
+[8160]
+short = "Production supervisors"
+aliases = ["production supervisor", "production manager", "factory supervisor", "shift manager"]
+
+[8211]
+short = "HGV drivers"
+aliases = ["hgv", "hgv driver", "lorry driver", "truck driver", "class 1", "class 2", "lgv", "driver"]
+
+[8212]
+aliases = ["bus driver", "coach driver", "driver"]
+
+[8213]
+short = "Taxi drivers and chauffeurs"
+aliases = ["taxi driver", "cab driver", "chauffeur", "private hire", "driver"]
+
+[8214]
+short = "Delivery drivers"
+aliases = ["delivery driver", "courier", "van driver", "multi drop driver", "driver"]
+
+[8215]
+aliases = ["driving instructor"]
+
+[8219]
+short = "Other drivers"
+aliases = ["driver"]
+
+[8221]
+aliases = ["crane operator", "crane driver"]
+
+[8222]
+short = "Forklift drivers"
+aliases = ["forklift driver", "forklift", "flt driver", "reach truck"]
+
+[8229]
+short = "Other mobile machine operators"
+aliases = ["plant operator", "digger driver", "excavator operator"]
+
+[8231]
+aliases = ["train driver", "tram driver", "driver"]
+
+[8232]
+short = "Marine transport workers"
+aliases = ["deckhand", "boatman"]
+
+[8233]
+aliases = ["baggage handler", "ramp agent", "airport"]
+
+[8239]
+short = "Other transport workers"
+
+# 9 · Elementary
+[9119]
+short = "Other farming and fishing workers"
+
+[9121]
+aliases = ["groundworker"]
+
+[9129]
+short = "Other construction labourers"
+aliases = ["labourer", "general labourer", "site labourer"]
+
+[9131]
+short = "Industrial cleaners"
+
+[9132]
+short = "Packers"
+aliases = ["packer", "picker packer"]
+
+[9139]
+short = "Other process workers"
+
+[9211]
+short = "Postal workers"
+aliases = ["postman", "postwoman", "postal worker", "mail sorter", "courier"]
+
+[9219]
+short = "Other admin assistants"
+
+[9223]
+short = "Cleaners"
+aliases = ["cleaner", "domestic", "domestic assistant", "office cleaner"]
+
+[9224]
+short = "Laundry workers"
+aliases = ["laundry", "dry cleaner"]
+
+[9225]
+short = "Refuse collectors"
+aliases = ["bin man", "refuse collector", "waste operative", "recycling"]
+
+[9226]
+short = "Car valeters"
+aliases = ["valeter", "car washer"]
+
+[9229]
+short = "Other cleaners"
+
+[9231]
+short = "Security guards"
+aliases = ["security guard", "security officer", "door supervisor", "bouncer", "security"]
+
+[9232]
+short = "Lunchtime supervisors and crossing patrols"
+aliases = ["dinner lady", "lollipop", "midday supervisor", "crossing patrol"]
+
+[9241]
+aliases = ["shelf stacker", "merchandiser", "night filler"]
+
+[9249]
+short = "Other sales assistants"
+
+[9251]
+short = "Warehouse supervisors"
+aliases = ["warehouse supervisor", "warehouse team leader"]
+
+[9252]
+aliases = ["warehouse", "warehouse worker", "picker", "packer", "warehouse operative"]
+
+[9253]
+aliases = ["delivery", "delivery operative", "parcel delivery", "driver's mate"]
+
+[9259]
+short = "Other storage workers"
+
+[9261]
+aliases = ["bar supervisor", "catering supervisor"]
+
+[9262]
+aliases = ["porter", "hospital porter"]
+
+[9263]
+short = "Kitchen assistants"
+aliases = ["kitchen porter", "kp", "kitchen assistant", "catering assistant", "dishwasher"]
+
+[9264]
+short = "Waiting staff"
+aliases = ["waiter", "waitress", "server", "waiting staff", "front of house"]
+
+[9265]
+aliases = ["bartender", "barman", "barmaid", "bar staff", "mixologist"]
+
+[9266]
+aliases = ["barista", "coffee shop"]
+
+[9267]
+short = "Leisure and theme park attendants"
+aliases = ["ride operator", "attendant"]
+
+[9269]
+short = "Other service jobs"

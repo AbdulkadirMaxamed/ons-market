@@ -1,6 +1,6 @@
 /**
  * Matching typed text to jobs and places (homepage search). Pure, so the browser and the no-JavaScript fallback
- * on the server rank results the same way. Friendlier names and aliases come later with S-003.
+ * on the server rank results the same way. Jobs match on the friendly name, ONS's name and everyday aliases (S-003).
  */
 
 import type { SearchIndex } from "./types";
@@ -50,18 +50,49 @@ function score(name: string, query: string): number {
   return 0;
 }
 
-function rank<T>(items: T[], query: string, name: (x: T) => string, extra?: (x: T, q: string) => number, limit = 8): T[] {
+function rank<T>(
+  items: T[],
+  query: string,
+  name: (x: T) => string,
+  extra?: (x: T, q: string) => number,
+  limit = 8,
+  pop: (x: T) => number = () => 0,
+): T[] {
   return items
-    .map((x, i) => ({ x, i, s: Math.max(score(name(x), query), extra?.(x, query) ?? 0) }))
+    .map((x, i) => {
+      const n = score(name(x), query);
+      return { x, i, n, s: Math.max(n, extra?.(x, query) ?? 0) };
+    })
     .filter((r) => r.s > 0)
-    .sort((a, b) => b.s - a.s || name(a.x).length - name(b.x).length || a.i - b.i)
+    // Ties (e.g. every job with the alias "nurse") go to the most advertised job, then the best match on the shown
+    // name, then the shortest.
+    .sort((a, b) => b.s - a.s || pop(a.x) - pop(b.x) || b.n - a.n || name(a.x).length - name(b.x).length || a.i - b.i)
     .slice(0, limit)
     .map((r) => r.x);
 }
 
+/** Score from what isn't the shown name: a SOC code, an alias ("sparky"), or ONS's official name. */
+function jobExtra(j: JobItem, query: string): number {
+  const q = query.trim();
+  if (/^\d{2,4}$/.test(q)) return j.soc.startsWith(q) ? 90 : 0; // "2134" goes to that job
+  const nq = normalise(q);
+  const aliases = j.aliases ?? [];
+  // A typed alias ranks just under an exact name; a partial alias match counts for less than a partial name match.
+  const alias = aliases.some((a) => normalise(a) === nq) ? 92 : Math.max(0, ...aliases.map((a) => score(a, q) - 10));
+  return Math.max(alias, j.ons ? score(j.ons, q) - 2 : 0);
+}
+
 export function findJobs(jobs: JobItem[], query: string, limit?: number): JobItem[] {
-  // A SOC code typed directly ("2134") goes to that job.
-  return rank(jobs, query, (j) => j.name, (j, q) => (/^\d{2,4}$/.test(q.trim()) && j.soc.startsWith(q.trim()) ? 90 : 0), limit);
+  return rank(jobs, query, (j) => j.name, jobExtra, limit, (j) => j.pop ?? Infinity);
+}
+
+/** A job by its URL slug, or by the slug it had before its friendly name (`moved`: redirect to the new URL). */
+export function jobBySlug(jobs: JobItem[], slug: string | undefined): { job: JobItem; moved: boolean } | undefined {
+  if (!slug) return undefined;
+  const job = jobs.find((o) => o.slug === slug);
+  if (job) return { job, moved: false };
+  const old = jobs.find((o) => o.old === slug);
+  return old && { job: old, moved: true };
 }
 
 export function findPlaces(places: PlaceItem[], query: string, limit?: number): PlaceItem[] {
@@ -92,7 +123,7 @@ export function resolveSearch(
   const jobText = input.job?.trim() ?? "";
   const whereText = input.where?.trim() ?? "";
   const job =
-    (input.jobSlug && index.occupations.find((o) => o.slug === input.jobSlug)) ||
+    (input.jobSlug && jobBySlug(index.occupations, input.jobSlug)?.job) ||
     (jobText ? findJobs(index.occupations, jobText, 1)[0] : undefined);
   if (!jobText && !input.jobSlug) return { ok: false, field: "job", message: "Type a job to check, for example “nurse”." };
   if (!job) return { ok: false, field: "job", message: `We couldn’t find a job matching “${jobText}”. Try a different word.` };

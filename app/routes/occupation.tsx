@@ -1,13 +1,14 @@
-import { data, Link, useSearchParams } from "react-router";
+import { data, Link, redirect, useSearchParams } from "react-router";
 
 import type { Route } from "./+types/occupation";
 import { LinkTabs, Pager, RankingTable, Showing, SortTabs, TotalCard, ViewTabs } from "~/components/rankings/Ranking";
 import { SiteFooter, SiteHeader } from "~/components/SiteChrome";
 import { loadShard, type Meta, type OccupationShard, type SearchIndex, type Series } from "~/lib/data.server";
-import { periodLabel } from "~/lib/format";
+import { inSentence, periodLabel } from "~/lib/format";
 import { placeName } from "~/lib/market.server";
 import { missingFor } from "~/lib/missing";
 import { parseRankParams, rankHref, rankItems, type RankItem } from "~/lib/rankings";
+import { jobBySlug } from "~/lib/search";
 
 /** One job, every place (docs/02-design.md §1): monthly for the UK and regions, quarterly for every local area. */
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -15,8 +16,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     loadShard<SearchIndex>(request, "search.json"),
     loadShard<Meta>(request, "meta.json"),
   ]);
-  const occ = index?.occupations.find((o) => o.slug === params.occupation);
-  if (!index || !meta || !occ) throw data("Not found", { status: 404 });
+  const found = index && jobBySlug(index.occupations, params.occupation);
+  if (!index || !meta || !found) throw data("Not found", { status: 404 });
+  const occ = found.job;
+  if (found.moved) throw redirect(`/occupation/${occ.slug}${new URL(request.url).search}`, 301);
   const shard = await loadShard<OccupationShard>(request, `occupation/${occ.soc}.json`);
   if (!shard) throw data("Not found", { status: 404 });
 
@@ -48,7 +51,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   });
 
   return {
-    job: { name: occ.name, slug: occ.slug, soc: occ.soc },
+    job: { name: occ.name, ons: shard.ons ?? occ.name, slug: occ.slug, soc: occ.soc },
     view: rp.view,
     sort: rp.sort,
     newest,
@@ -70,10 +73,10 @@ export function meta({ loaderData }: Route.MetaArgs) {
   if (!loaderData) return [{ title: "Not found | Is the market cooked?" }];
   const { job } = loaderData;
   return [
-    { title: `Where are ${job.name.toLowerCase()} being hired? | Is the market cooked?` },
+    { title: `Where are ${inSentence(job.name)} being hired? | Is the market cooked?` },
     {
       name: "description",
-      content: `ONS online job-advert figures for ${job.name.toLowerCase()} across the UK, ranked by region and local area, with the change on a year ago.`,
+      content: `ONS online job-advert figures for ${inSentence(job.name)} across the UK, ranked by region and local area, with the change on a year ago.`,
     },
   ];
 }
@@ -94,10 +97,11 @@ export default function Occupation({ loaderData }: Route.ComponentProps) {
         <section className="ink-in pt-[22px]" style={{ "--i": 0 } as React.CSSProperties}>
           <p className="text-[13.5px] text-ink-3">Jobs › {job.name}</p>
           <h1 className="mt-1.5 text-[clamp(26px,4vw,38px)] leading-[1.1] tracking-[-0.025em]">
-            Where are {job.name.toLowerCase()} being hired?
+            Where are {inSentence(job.name)} being hired?
           </h1>
           <p className="mt-1.5 text-[14.5px] text-ink-3">
-            SOC {job.soc} · new online job adverts by area · {periodLabel(newest, "long")}
+            {job.ons !== job.name && <>ONS name: {job.ons} · </>}SOC {job.soc} · new online job adverts by area ·{" "}
+            {periodLabel(newest, "long")}
           </p>
         </section>
 

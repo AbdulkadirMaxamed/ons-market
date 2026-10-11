@@ -73,7 +73,7 @@ export function SearchForm({
         renderOption={(o) => (
           <>
             {o.name}
-            <small className="block text-[12.5px] text-ink-3">SOC {o.soc}</small>
+            <small className="block text-[12.5px] text-ink-3">{o.ons ? `ONS: ${o.ons}` : `SOC ${o.soc}`}</small>
           </>
         )}
         onPick={(o) => {

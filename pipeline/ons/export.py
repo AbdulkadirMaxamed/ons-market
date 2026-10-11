@@ -4,7 +4,8 @@ Files written to `public/data/` (git-ignored, deployed with the site):
 
   meta.json                 release, latest month and quarter, periods ONS withheld entirely, and the notices
                             explaining missing/estimated periods (ONS's own text + our short reason, S-010)
-  search.json               every 4-digit job and every place, for search and URL slugs
+  search.json               every 4-digit job (friendly name, ONS name, aliases, old slug from jobs.toml, S-003) and
+                            every place, for search and URL slugs
   overview.json             homepage: UK all-jobs series, jobs rising and falling fastest
   occupation/{soc4}.json    one exact job: monthly UK + regions (Table 3), quarterly for every place
                             (Table 5 for local authorities and London; whole quarters of Table 3 for the
@@ -31,6 +32,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from .jobs import DEFAULT_JOBS, JobName, job_names
 from .metrics import series_metrics, months_to_quarters
 from .notices import DEFAULT_NOTICES, load_notices
 from .workbook import UK, next_period
@@ -46,6 +48,7 @@ class ExportResult:
     occupations: int
     groups: int
     places: int
+    unused_jobs: list[str]  # jobs.toml entries for codes not in the data
 
 
 def _periods(start: str, end: str) -> list[str]:
@@ -118,19 +121,42 @@ def _notices(conn: sqlite3.Connection, import_id: int, notices_path: Path) -> li
     return out
 
 
-def run_export(db_path: Path, out_dir: Path, notices_path: Path = DEFAULT_NOTICES) -> ExportResult:
+def _popularity(conn: sqlite3.Connection, months: list[str]) -> dict[str, int]:
+    """soc → rank by UK adverts (Table 3) summed over `months`, missing months skipped (1 = most)."""
+    rows = conn.execute(
+        f"SELECT soc_code, SUM(adverts) FROM observations WHERE source_table = 'T3' AND location_code = ? "
+        f"AND period IN ({','.join('?' * len(months))}) AND adverts IS NOT NULL GROUP BY soc_code "
+        "ORDER BY SUM(adverts) DESC, soc_code", (UK[0], *months)).fetchall()
+    return {soc: i for i, (soc, _) in enumerate(rows, 1)}
+
+
+def _search_job(j: JobName, group: str, pop: dict[str, int]) -> dict:
+    """Search entry: `ons` only when the shown name differs, `old` only when the URL changed. `pop` is the job's
+    rank by UK adverts over the last 12 months (1 = most), used only to order equally good search matches."""
+    out = {"soc": j.soc, "name": j.name, "slug": j.slug, "group": group, "pop": pop.get(j.soc, len(pop) + 1)}
+    if j.name != j.ons:
+        out["ons"] = j.ons
+    if j.aliases:
+        out["aliases"] = list(j.aliases)
+    if j.old_slug:
+        out["old"] = j.old_slug
+    return out
+
+
+def run_export(db_path: Path, out_dir: Path, notices_path: Path = DEFAULT_NOTICES,
+               jobs_path: Path = DEFAULT_JOBS) -> ExportResult:
     if not db_path.exists():
         raise FileNotFoundError(f"No database at {db_path}. Run `pnpm data:import <file.xlsx>` first.")
     conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     tmp = out_dir.with_name(out_dir.name + ".tmp")
     try:
-        return _export(conn, out_dir, tmp, notices_path)
+        return _export(conn, out_dir, tmp, notices_path, jobs_path)
     finally:
         conn.close()
         shutil.rmtree(tmp, ignore_errors=True)
 
 
-def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Path) -> ExportResult:
+def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Path, jobs_path: Path) -> ExportResult:
     release = conn.execute(
         "SELECT id, release_label, published_on, latest_period FROM imports "
         "WHERE status = 'succeeded' ORDER BY id DESC LIMIT 1").fetchone()
@@ -144,6 +170,8 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
 
     occupations = conn.execute(
         "SELECT soc_code, name, slug, parent_code FROM occupations WHERE level = 4 ORDER BY soc_code").fetchall()
+    names, unused_jobs = job_names([(s, n, sl) for s, n, sl, _ in occupations], jobs_path)
+    occupations = [(s, names[s].name, names[s].slug, p) for s, _, _, p in occupations]
     groups = {code: (name, slug) for code, name, slug in conn.execute(
         "SELECT soc_code, name, slug FROM occupations WHERE level = 3 ORDER BY soc_code")}
     places = conn.execute(
@@ -171,8 +199,9 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
         "notices": _notices(conn, import_id, notices_path),
     })
 
+    pop = _popularity(conn, months[-12:])
     write("search.json", {
-        "occupations": [{"soc": s, "name": n, "slug": sl, "group": p} for s, n, sl, p in occupations],
+        "occupations": [_search_job(names[s], p, pop) for s, _, _, p in occupations],
         "groups": {code: {"name": n, "slug": sl} for code, (n, sl) in groups.items()},
         "places": [{"code": c, "name": n, "slug": sl, "type": t, "region": p if t == "lad" else None}
                    for c, n, sl, t, p in places],
@@ -203,7 +232,7 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
         for loc, place in quarterly.items():
             rows_q.setdefault(loc, []).append(_row(soc, place["m"]))
         write(f"occupation/{soc}.json", {
-            "soc": soc, "name": name, "slug": slug, "group": group,
+            "soc": soc, "name": name, "ons": names[soc].ons, "slug": slug, "group": group,
             "months": month_span, "quarters": quarter_span,
             "monthly": monthly_places,
             "quarterly": quarterly,
@@ -250,4 +279,5 @@ def _export(conn: sqlite3.Connection, out_dir: Path, tmp: Path, notices_path: Pa
         out_dir.rename(old)
     tmp.rename(out_dir)
     shutil.rmtree(old, ignore_errors=True)
-    return ExportResult(files=files, bytes=size, occupations=len(occupations), groups=len(groups), places=len(places))
+    return ExportResult(files=files, bytes=size, occupations=len(occupations), groups=len(groups), places=len(places),
+                        unused_jobs=unused_jobs)

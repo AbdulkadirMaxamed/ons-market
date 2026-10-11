@@ -12,10 +12,10 @@ def load(out, rel):
 
 
 @pytest.fixture
-def out(make_workbook, db_path, tmp_path):
+def out(make_workbook, db_path, tmp_path, jobs_path):
     run_import(db_path, make_workbook())
     out = tmp_path / "public" / "data"
-    run_export(db_path, out)
+    run_export(db_path, out, jobs_path=jobs_path)
     return out
 
 

@@ -134,6 +134,7 @@ pipeline/            Python data pipeline
   ons/export.py        SQLite → JSON data files
   ons/schema.sql       database schema
   notices.toml         why figures are missing or estimated, per ONS data issue
+  jobs.toml            friendly job names and search aliases (checked on export)
   tests/               pytest suite
 docs/                architecture, design and workbook profile
 mockups/             design explorations and the final reference design

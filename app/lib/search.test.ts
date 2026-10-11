@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { findJobs, findPlaces, normalise, placeHint, resolveSearch, stem } from "./search";
+import { findJobs, findPlaces, jobBySlug, normalise, placeHint, resolveSearch, stem, type JobItem } from "./search";
 import type { SearchIndex } from "./types";
 
 const index: SearchIndex = {
@@ -77,5 +77,47 @@ describe("resolveSearch", () => {
       message: "We couldn’t find a job matching “astronaut”. Try a different word.",
     });
     expect(resolveSearch(index, { job: "nurse", where: "Atlantis" })).toMatchObject({ ok: false, field: "where" });
+  });
+});
+
+describe("friendly names and aliases (S-003)", () => {
+  const job = (soc: string, name: string, extra: Partial<JobItem> = {}): JobItem => ({ soc, name, slug: name.toLowerCase().replace(/\W+/g, "-"), group: soc.slice(0, 3), ...extra });
+  const jobs: JobItem[] = [
+    job("2134", "Software developers", { ons: "Programmers and software development professionals", aliases: ["software engineer", "programmer", "dev"], old: "programmers-and-software-development-professionals" }),
+    job("5241", "Electricians", { ons: "Electricians and electrical fitters", aliases: ["electrician", "sparky"] }),
+    job("2231", "Midwives", { ons: "Midwifery nurses", aliases: ["midwife", "nurse"] }),
+    job("2232", "Community nurses", { ons: "Registered community nurses", aliases: ["nurse", "district nurse"] }),
+    job("6111", "Nursery assistants", { ons: "Early education and childcare assistants" }),
+    job("2123", "Electrical engineers", { aliases: ["engineer"] }),
+  ];
+
+  it("finds a job by an everyday word", () => {
+    expect(findJobs(jobs, "sparky")[0].soc).toBe("5241");
+    expect(findJobs(jobs, "software engineer")[0].soc).toBe("2134");
+    expect(findJobs(jobs, "dev")[0].soc).toBe("2134");
+  });
+  it("still finds a job by ONS's official name", () => {
+    expect(findJobs(jobs, "programmers and software")[0].soc).toBe("2134");
+    expect(findJobs(jobs, "electrical fitters")[0].soc).toBe("5241");
+  });
+  it("breaks alias ties on the shown name: nurses, then midwives, then the weak \"nursery\" prefix match", () => {
+    expect(findJobs(jobs, "nurse").map((j) => j.soc)).toEqual(["2232", "2231", "6111"]);
+  });
+  it("orders equally good matches by how many adverts the job has", () => {
+    const popular = jobs.map((j) => ({ ...j, pop: j.soc === "2231" ? 1 : 2 }));
+    expect(findJobs(popular, "nurse").map((j) => j.soc).slice(0, 2)).toEqual(["2231", "2232"]);
+  });
+  it("an exact name beats an alias", () => {
+    expect(findJobs(jobs, "electricians")[0].soc).toBe("5241");
+  });
+  it("finds a job by its old URL and says it moved", () => {
+    expect(jobBySlug(jobs, "software-developers")).toEqual({ job: jobs[0], moved: false });
+    expect(jobBySlug(jobs, "programmers-and-software-development-professionals")).toEqual({ job: jobs[0], moved: true });
+    expect(jobBySlug(jobs, "nope")).toBeUndefined();
+  });
+  it("resolves a picked old slug to the new URL", () => {
+    const friendly: SearchIndex = { occupations: jobs, groups: {}, places: index.places };
+    expect(resolveSearch(friendly, { jobSlug: "programmers-and-software-development-professionals", where: "Manchester" }))
+      .toEqual({ ok: true, href: "/market/software-developers/manchester" });
   });
 });

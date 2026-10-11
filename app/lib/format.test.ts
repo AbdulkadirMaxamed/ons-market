@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dateLabel, direction, fmt, fmtPct, nextPeriod, periodLabel, periodsBetween, sentenceCase, windowLabel } from "./format";
+import { dateLabel, direction, fmt, fmtPct, inSentence, nextPeriod, periodLabel, periodsBetween, sentenceCase, windowLabel } from "./format";
 
 describe("numbers", () => {
   it("formats counts the UK way and shows missing as a dash", () => {
@@ -55,5 +55,16 @@ describe("wording", () => {
     expect(direction({ s: "small", abs: 4 })).toBe("na");
     expect(direction({ s: "missing" })).toBe("na");
     expect(direction(null)).toBe("na");
+  });
+});
+
+describe("inSentence", () => {
+  it("lower-cases the first letter but keeps acronyms", () => {
+    expect(inSentence("Software developers")).toBe("software developers");
+    expect(inSentence("Children's nurses")).toBe("children's nurses");
+    expect(inSentence("GPs")).toBe("GPs");
+    expect(inSentence("HR managers")).toBe("HR managers");
+    expect(inSentence("IT professionals")).toBe("IT professionals");
+    expect(inSentence("Other IT professionals")).toBe("other IT professionals");
   });
 });

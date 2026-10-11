@@ -8,8 +8,8 @@ import { ARROW, direction, fmt, fmtPct, periodLabel, windowLabel } from "~/lib/f
 import { resolveSearch } from "~/lib/search";
 
 const TRY = [
-  ["Software developers in Manchester", "/market/programmers-and-software-development-professionals/manchester"],
-  ["Nurses in Leeds", "/market/registered-community-nurses/leeds"],
+  ["Software developers in Manchester", "/market/software-developers/manchester"],
+  ["Nurses in Leeds", "/market/community-nurses/leeds"],
   ["Chefs in London", "/market/chefs/london"],
 ] as const;
 

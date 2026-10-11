@@ -74,6 +74,11 @@ export function windowLabel(from: string, to: string): string {
     : `${periodLabel(from, "mid")}–${periodLabel(to, "mid")}`;
 }
 
+/** A name used mid-sentence: lower-case the first letter unless the first word is an acronym ("GPs", "HR managers"). */
+export function inSentence(name: string): string {
+  return /^[A-Z][a-z']/.test(name) ? name[0].toLowerCase() + name.slice(1) : name;
+}
+
 /** ONS 3-digit names are Title Case ("Information Technology Professionals"); make them sentence case, keep acronyms. */
 export function sentenceCase(name: string): string {
   return name

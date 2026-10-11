@@ -237,7 +237,7 @@ CREATE TABLE observation_revisions (       -- audit trail when ONS changes histo
 | File | Contents | Size (real export, uncompressed) |
 |---|---|---|
 | `meta.json` | release label, published date, latest month and quarter, periods ONS withheld everywhere, and `notices`: each ONS data issue with its cause (`not_collected` · `withheld` · `estimated` · `caution`), periods, our short reason and ONS's full text (S-010) | 7 KB |
-| `search.json` | every 4-digit job (code, name, slug, 3-digit group), every 3-digit group name, every place (UK, regions incl. London, local authorities) | 89 KB |
+| `search.json` | every 4-digit job (code, friendly name, ONS name, aliases, slug, old slug, popularity rank, 3-digit group), every 3-digit group name, every place (UK, regions incl. London, local authorities) | 128 KB (about 30 KB compressed) |
 | `overview.json` | homepage: UK all-jobs monthly series, the UK jobs rising and falling fastest (3 months vs a year earlier, at least 1,500 adverts a year earlier) | 4 KB |
 | `occupation/{soc4}.json` | one exact job: **monthly** for the UK and regions (Table 3); **quarterly** for every place (Table 5 for local authorities and London; whole quarters of Table 3 for the UK and other regions, marked `derived`) | up to 200 KB |
 | `group/{soc3}.json` | one 3-digit job group: **monthly** for every local authority (Table 4). Feeds the Monthly view of a local authority | up to 290 KB |
@@ -247,7 +247,7 @@ First real export (2026-10-09): 519 files, 96 MB, 59 seconds. With location file
 
 Every series is an array aligned to the shard's `months` / `quarters` span, with `null` where ONS withheld the figure, plus its comparisons (`m`, see §6). A place with no figures at all has `m: null`.
 
-**Search** reads `search.json` straight from the static assets in the browser (fetched when someone first focuses a search box), so typing costs no Worker CPU. Without JavaScript the form submits to the homepage loader, which matches the text with the same code (`app/lib/search.ts`) and redirects.
+**Search** reads `search.json` straight from the static assets in the browser (fetched when someone first focuses a search box), so typing costs no Worker CPU. Without JavaScript the form submits to the homepage loader, which matches the text with the same code (`app/lib/search.ts`) and redirects. Jobs match on the friendly name, ONS's name and everyday aliases from `pipeline/jobs.toml` (S-003); equally good matches are ordered by UK adverts over the last 12 months. A job's pre-S-003 URL redirects (301) to its short one.
 
 **The result page needs at most two shards:** `occupation/2134.json` (Quarterly view, and Monthly for the UK and regions) and, for a local authority's Monthly view, `group/213.json`. Each one also holds every comparison place.
 
@@ -340,7 +340,7 @@ For monthly series this uses the 3-month rolling figure, which ONS's own advice 
 | ONS changes the workbook layout or table numbering | High over time | Strict structure check; failures are loud and safe |
 | Small numbers look dramatic (2 → 4 = "+100%") | Certain | Minimum-volume rule; show counts first |
 | Suppressed recent periods (all of 2026 Q1; 55% of 2026 Q2) | Certain | "Latest available" logic; explain gaps on the chart |
-| Users don't recognise SOC names ("Programmers and software development professionals") | High | Search matches inside names; alias table ready; short display names (S-003) |
+| Users don't recognise SOC names ("Programmers and software development professionals") | High | Done (S-003): short display names, ~890 aliases, ONS name shown under each heading |
 | City names ≠ ONS areas (London is one area; "Edinburgh" is "City of Edinburgh") | Medium | Search covers LAD and region names; London is shown as a region |
 | Statistics in development may be revised heavily or discontinued | Low–medium | Show the status, release date and notices on every page |
 | Copy overstates certainty | Medium | Copy rules in `02-design.md` §11 |

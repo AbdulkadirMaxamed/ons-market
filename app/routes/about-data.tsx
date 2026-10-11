@@ -114,6 +114,11 @@ export default function AboutData({ loaderData }: Route.ComponentProps) {
               <strong className={b}>New online job adverts</strong>: adverts that appeared online for the first time in a
               month or quarter. Not jobs filled, and not every job on offer.
             </p>
+            <p className="mt-3">
+              Jobs follow ONS’s classification (SOC 2020). We use shorter everyday names, such as “Software developers”
+              for ONS’s “Programmers and software development professionals”; the official name and code are always
+              shown under the heading.
+            </p>
             <h3>Monthly and Quarterly</h3>
             <p>ONS publishes different detail at different levels, so every page has a Monthly and a Quarterly view:</p>
             <ul className="mt-2 grid list-disc gap-1.5 pl-5">

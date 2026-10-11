@@ -42,6 +42,7 @@ Dates before 2026-10-09 are when the project was set up (2026-10-05 to 2026-10-0
 | B-028 | Export test expected the wrong latest figure next to a real zero | pipeline · tests | low | fixed |
 | B-029 | Monthly percentages shown on tiny 3-month totals (19 adverts, ▲90%) | pipeline · metrics | medium | fixed |
 | B-030 | Scripted edit deleted the small-numbers footnote on ranking pages | tooling · process | low | fixed |
+| B-031 | Acronyms lower-cased mid-sentence ("it professionals") | web · result and ranking pages | low | fixed |
 
 ---
 
@@ -246,3 +247,10 @@ Dates before 2026-10-09 are when the project was set up (2026-10-05 to 2026-10-0
 - **Cause:** a `perl -pi` replacement used `$1{" "}`; Perl reads that as a hash lookup (`$1{...}`), which is empty, so the matched sentence was replaced with nothing. Type checks and tests passed because the text is just copy.
 - **Fix:** sentence restored (with the new 90 wording).
 - **Lesson:** don't use Perl substitutions on JSX (braces clash with Perl syntax); use exact-string edits, and grep for the original text after any scripted replacement.
+
+## B-031 · Acronyms lower-cased mid-sentence ("it professionals")
+- **Status:** fixed (2026-10-11) · **Severity:** low · **Area:** web · result and ranking pages · **Found:** adding short names like "GPs" and "HR managers" (S-003)
+- **Symptom:** the result page's Monthly note read "this shows **it professionals** (SOC 213)"; with S-003 it would also have printed "gps", "hr managers" and "hgv drivers".
+- **Cause:** names used inside a sentence went through `.toLowerCase()`, which flattens acronyms.
+- **Fix:** `inSentence()` in `format.ts` lower-cases only the first letter, and only when the first word isn't an acronym; every mid-sentence name uses it. Tested.
+- **Lesson:** never lower-case a whole display name; names carry acronyms and proper nouns ("IT", "English").

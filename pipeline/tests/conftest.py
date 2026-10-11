@@ -137,6 +137,23 @@ def notices_path(tmp_path: Path) -> Path:
     return path
 
 
+JOBS = """
+[2134]
+short = "Software developers"
+aliases = ["Programmer", "dev"]
+
+[9999]
+aliases = ["not in the data"]
+"""
+
+
+@pytest.fixture
+def jobs_path(tmp_path: Path) -> Path:
+    path = tmp_path / "jobs.toml"
+    path.write_text(JOBS)
+    return path
+
+
 @pytest.fixture
 def db_path(tmp_path: Path) -> Path:
     return tmp_path / "db" / "test.sqlite"

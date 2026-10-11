@@ -33,7 +33,7 @@ const index: SearchIndex = {
   ],
 };
 const occupation: OccupationShard = {
-  soc: "2134", name: "Programmers", slug: "programmers", group: "213",
+  soc: "2134", name: "Programmers", ons: "Programmers", slug: "programmers", group: "213",
   months: { start: "2026-08", end: "2026-08" }, quarters: { start: "2026-Q2", end: "2026-Q2" },
   monthly: { K02000001: s("2026-08", 1000), TLD: s("2026-08", 100), TLI: s("2026-08", 400) },
   quarterly: {

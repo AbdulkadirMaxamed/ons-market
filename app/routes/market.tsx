@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { data, Link, useSearchParams, type ShouldRevalidateFunctionArgs } from "react-router";
+import { data, Link, redirect, useSearchParams, type ShouldRevalidateFunctionArgs } from "react-router";
 
 import type { Route } from "./+types/market";
 import { Chart } from "~/components/market/Chart";
@@ -14,6 +14,7 @@ import {
   direction,
   fmt,
   fmtPct,
+  inSentence,
   MIN_VOLUME,
   nextPeriod,
   periodLabel,
@@ -23,6 +24,7 @@ import {
   windowLabel,
 } from "~/lib/format";
 import { marketViews, placeName, type Cadence, type View } from "~/lib/market.server";
+import { jobBySlug } from "~/lib/search";
 import { estimatedFor, missingFor, notFound, sourceOf, unpublished } from "~/lib/missing";
 import type { Change, Notice } from "~/lib/types";
 
@@ -31,9 +33,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     loadShard<SearchIndex>(request, "search.json"),
     loadShard<Meta>(request, "meta.json"),
   ]);
-  const occ = index?.occupations.find((o) => o.slug === params.occupation);
+  const found = index && jobBySlug(index.occupations, params.occupation);
   const place = index?.places.find((p) => p.slug === params.location);
-  if (!index || !meta || !occ || !place) throw data("Not found", { status: 404 });
+  if (!index || !meta || !found || !place) throw data("Not found", { status: 404 });
+  const occ = found.job;
+  if (found.moved) throw redirect(`/market/${occ.slug}/${place.slug}${new URL(request.url).search}`, 301);
 
   const [occupation, group] = await Promise.all([
     loadShard<OccupationShard>(request, `occupation/${occ.soc}.json`),
@@ -43,7 +47,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const region = place.region ? index.places.find((p) => p.code === place.region) : undefined;
   return {
-    job: { code: occ.soc, name: occ.name, slug: occ.slug },
+    job: { code: occ.soc, name: occ.name, ons: occupation.ons ?? occ.name, slug: occ.slug },
     place: { code: place.code, name: placeName(place), slug: place.slug, type: place.type, region: region && placeName(region) },
     views: marketViews(occupation, group, index, place),
     notices: meta.notices,
@@ -65,8 +69,8 @@ export function meta({ loaderData }: Route.MetaArgs) {
   const { job, place, views } = loaderData;
   const q = views.Q?.m;
   const description = q
-    ? `Latest ONS online job-advert data for ${job.name.toLowerCase()} in ${place.name}: ${fmt(q.latest.value)} new adverts in ${periodLabel(q.latest.period)}.`
-    : `ONS online job-advert data for ${job.name.toLowerCase()} in ${place.name}.`;
+    ? `Latest ONS online job-advert data for ${inSentence(job.name)} in ${place.name}: ${fmt(q.latest.value)} new adverts in ${periodLabel(q.latest.period)}.`
+    : `ONS online job-advert data for ${inSentence(job.name)} in ${place.name}.`;
   return [
     { title: `${job.name} job market in ${place.name} | Is the market cooked?` },
     { name: "description", content: description },
@@ -175,7 +179,7 @@ function Heading({
   asked,
   notices,
 }: {
-  job: { code: string; name: string };
+  job: { code: string; name: string; ons: string };
   place: { name: string; region?: string; type: string };
   view: View;
   other: boolean;
@@ -190,7 +194,8 @@ function Heading({
         {job.name} in {place.name}
       </h1>
       <p className="mt-1.5 text-[14.5px] text-ink-3">
-        {series} · SOC {view.job.code} · {place.name}
+        {/* The subtitle carries ONS's official name, so a friendly short name never hides what's being counted. */}
+        {view.broader ? series : job.ons} · SOC {view.job.code} · {place.name}
         {place.region ? `, ${place.region}` : ""}
       </p>
       {view.cadence !== asked && (
@@ -205,11 +210,11 @@ function Heading({
       {view.broader && (
         <Banner>
           Monthly figures for {place.name} only exist for broader job groups, so this shows{" "}
-          <b className="font-medium">{series.toLowerCase()}</b> (SOC {view.job.code}), which includes{" "}
-          {job.name.toLowerCase()}.{" "}
+          <b className="font-medium">{inSentence(series)}</b> (SOC {view.job.code}), which includes{" "}
+          {inSentence(job.name)}.{" "}
           {other ? (
             <>
-              Switch to <b className="font-medium">Quarterly</b> on the chart for {job.name.toLowerCase()} only.
+              Switch to <b className="font-medium">Quarterly</b> on the chart for {inSentence(job.name)} only.
             </>
           ) : null}
         </Banner>
@@ -275,7 +280,7 @@ function Result({
   const nextQuarter = view.cadence === "Q" ? nextPeriod(view.span.end) : null;
   const quarterOfLatestMonth = `${release.latestMonth.slice(0, 4)}-Q${Math.ceil(Number(release.latestMonth.slice(5)) / 3)}`;
   const showUnpublished = nextQuarter != null && nextQuarter === quarterOfLatestMonth;
-  const what = view.broader ? sentenceCase(view.job.name).toLowerCase() : job.name.toLowerCase();
+  const what = view.broader ? inSentence(sentenceCase(view.job.name)) : inSentence(job.name);
 
   return (
     <>

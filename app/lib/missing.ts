@@ -3,7 +3,7 @@
  * Reasons come from pipeline/notices.toml via meta.json; ONS's own text is in `notice.ons`.
  */
 
-import { periodLabel } from "./format";
+import { inSentence, periodLabel } from "./format";
 import type { Notice } from "./types";
 
 export type MissingKind = "not_collected" | "withheld" | "unpublished" | "not_found";
@@ -48,7 +48,7 @@ export function notFound(job: string, place: string): Missing {
   return {
     kind: "not_found",
     label: LABEL.not_found,
-    reason: `ONS doesn’t publish figures for ${job.toLowerCase()} in ${place}.`,
+    reason: `ONS doesn’t publish figures for ${inSentence(job)} in ${place}.`,
     source: "ONS tables",
   };
 }
