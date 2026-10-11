@@ -44,7 +44,9 @@ export function TotalCard({ label, m, note }: { label: string; m: Metrics | null
             {m.basis === "roll" ? "a year ago" : m.yoy.period ? periodLabel(m.yoy.period) : "a year ago"}
           </span>
         ) : (
-          <span className="inline-flex rounded-full bg-flat-bg px-3 py-1 text-[15px] font-medium text-flat">No comparison with a year ago</span>
+          <span className="inline-flex rounded-full bg-flat-bg px-3 py-1 text-[15px] font-medium text-flat">
+            {head.s === "small" ? "Too few adverts to compare" : head.s === "zero" ? "None a year earlier, so no % change" : "No comparison with a year ago"}
+          </span>
         )}
         <p className="mt-2 text-[13.5px] text-ink-3">
           Trend:{" "}

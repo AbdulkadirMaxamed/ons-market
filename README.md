@@ -36,7 +36,7 @@ The data rules are written into the code and the tests:
 
 - **Nothing is made up.** Every figure on the site is an ONS figure, or is calculated directly from ONS figures.
 - **Missing isn't zero.** Values ONS suppresses (`[x]`) stay missing and show as gaps, while real zeros stay zero.
-- **No misleading percentages.** There's no % change against a missing or zero period, and no percentages or trend words below a minimum of 30 adverts.
+- **No misleading percentages.** There's no % change against a missing or zero period, and no percentages or trend words below a minimum of 30 adverts a period (90 for a 3-month total).
 - **Monthly comparisons smooth out the noise.** Year-on-year compares the last three months with the same three months a year earlier, as ONS advises caution with month-on-month moves.
 - **Accurate wording.** The site counts *online job adverts*, not vacancies or jobs available.
 - **Revisions are respected.** When ONS revises history, the next import updates it and logs the old and new values.

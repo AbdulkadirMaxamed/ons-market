@@ -292,7 +292,7 @@ For each series, using its own cadence (month or quarter):
 
 For monthly series this uses the 3-month rolling figure, which ONS's own advice favours. If any of those six months is withheld, it falls back to the single-month year-on-year figure, and the page says which one it used (`basis`). The page shows the rule in a tooltip.
 
-**Minimum volume** (proposed): percentages and trend words need **both values to be 30 or more**. Below that the page shows the counts and says "Too few adverts to measure change reliably". A count of 30 naturally varies by about ±18% from random chance alone, so smaller bases mostly show noise. This is one constant in `metrics.py`, and we can tune it after looking at real pages.
+**Minimum volume** (proposed): percentages and trend words need **both values to be 30 or more**. Below that the page shows the counts and says "Too few adverts to measure change reliably". A count of 30 naturally varies by about ±18% from random chance alone, so smaller bases mostly show noise. This is one constant in `metrics.py`, and we can tune it after looking at real pages. **Decided 2026-10-11 (option C, `mockups/small-numbers/`):** a 3-month total needs 90 (an average of 30 a month), and a window that's too small stays "small" instead of falling back to the single month.
 
 ---
 

@@ -40,6 +40,8 @@ Dates before 2026-10-09 are when the project was set up (2026-10-05 to 2026-10-0
 | B-026 | Hydration warning about `data-scribe-recorder-ready` | web | – | not a bug |
 | B-027 | Pager showed "1 2 … 4", hiding a single page behind "…" | web · ranking pages | low | fixed |
 | B-028 | Export test expected the wrong latest figure next to a real zero | pipeline · tests | low | fixed |
+| B-029 | Monthly percentages shown on tiny 3-month totals (19 adverts, ▲90%) | pipeline · metrics | medium | fixed |
+| B-030 | Scripted edit deleted the small-numbers footnote on ranking pages | tooling · process | low | fixed |
 
 ---
 
@@ -230,3 +232,17 @@ Dates before 2026-10-09 are when the project was set up (2026-10-05 to 2026-10-0
 - **Cause:** the test was wrong, not the code. The test workbook has a real zero in February, and a zero is a figure, so February is the latest month.
 - **Fix:** corrected the test and added a comment saying why.
 - **Lesson:** the "zeros are values, never gaps" rule applies when writing tests too. When a test fails, check the expectation against the data rules before changing the code.
+
+## B-029 · Monthly percentages shown on tiny 3-month totals
+- **Status:** fixed (2026-10-11) · **Severity:** medium · **Area:** pipeline · metrics (`metrics.py`) · **Found:** reviewing "Biggest rise" lists
+- **Symptom:** Data entry administrators in Wales showed **19 adverts ▲90.3% Growing** and ranked 6th for Biggest rise in Wales. 430 of 2,124 monthly job × region rows paired a headline under 30 with a percentage.
+- **Cause:** the 30 minimum was applied to 3-month totals, so 59 vs 31 passed even though that's about 10 adverts a month a year earlier. And when the 3-month window wasn't usable for any reason, the code fell back to the single month, so a too-small window could still produce a percentage that way.
+- **Fix:** option C (`mockups/small-numbers/`): a 3-month total needs 90 (an average of 30 a month), and only a *gap* in the window falls back to the single month; a too-small window stays "too few". Two tests. Copy updated on the result, ranking and About pages and the README.
+- **Lesson:** a threshold set for one period has to scale when periods are added together. Check every fallback path can't route around a rule.
+
+## B-030 · Scripted edit deleted the small-numbers footnote on ranking pages
+- **Status:** fixed (2026-10-11) · **Severity:** low · **Area:** tooling · process · **Found:** applying the B-029 wording
+- **Symptom:** after adding a "How we compare figures" link, the "Under 30 adverts…" sentence was gone from `/occupation` and `/location` pages.
+- **Cause:** a `perl -pi` replacement used `$1{" "}`; Perl reads that as a hash lookup (`$1{...}`), which is empty, so the matched sentence was replaced with nothing. Type checks and tests passed because the text is just copy.
+- **Fix:** sentence restored (with the new 90 wording).
+- **Lesson:** don't use Perl substitutions on JSX (braces clash with Perl syntax); use exact-string edits, and grep for the original text after any scripted replacement.

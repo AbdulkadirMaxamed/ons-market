@@ -7,7 +7,7 @@ const MONTH = ["January", "February", "March", "April", "May", "June", "July", "
 const QUARTER_LONG = ["January–March", "April–June", "July–September", "October–December"];
 const QUARTER_MID = ["Jan–Mar", "Apr–Jun", "Jul–Sep", "Oct–Dec"];
 
-export const MIN_VOLUME = 30; // must match pipeline/ons/metrics.py
+export const MIN_VOLUME = 30; // per period; 3-month totals need 3× (must match pipeline/ons/metrics.py)
 export const TREND_THRESHOLD = 10;
 
 export function fmt(n: number | null | undefined): string {

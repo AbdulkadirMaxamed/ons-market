@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { estimatedFor, LABEL, missingFor, notFound, sourceOf, unpublished } from "./missing";
+import { estimatedFor, LABEL, missingFor, noticePeriods, noticesByKind, notFound, sourceOf, unpublished } from "./missing";
 import type { Notice } from "./types";
 
 const notice = (n: Partial<Notice>): Notice => ({ heading: "", kind: "withheld", reason: "", months: [], quarters: [], ons: "", ...n });
@@ -44,4 +44,18 @@ it("finds estimated periods (11D)", () => {
 it("shortens ONS headings for the source line", () => {
   expect(sourceOf(NOTICES[0])).toBe("ONS, data issue: October 2025 - July 2026");
   expect(sourceOf(NOTICES[3])).toBe("ONS, data issue: January 2017");
+});
+
+describe("noticesByKind", () => {
+  it("orders not collected, withheld, estimated, caution and drops empty kinds", () => {
+    expect(noticesByKind(NOTICES).map((g) => g.kind)).toEqual(["not_collected", "withheld", "estimated", "caution"]);
+    expect(noticesByKind(NOTICES.filter((n) => n.kind === "caution")).map((g) => g.kind)).toEqual(["caution"]);
+  });
+});
+
+describe("noticePeriods", () => {
+  it("lists months and quarters", () => {
+    expect(noticePeriods(NOTICES[0])).toBe("Months: Feb 2026 · Quarters: Q1 2026");
+    expect(noticePeriods(NOTICES[3])).toBe("Months: Jan 2017");
+  });
 });

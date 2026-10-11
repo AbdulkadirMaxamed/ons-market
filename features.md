@@ -27,7 +27,7 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [x] Chart: hatched gaps with ONS-reason callout, range tabs, "Show the numbers" table, hover/tap/arrow-key reading
 - [x] Ink-in entrance and line-drawing animation for sparkline and chart (reduced-motion safe)
 - [x] Light and dark theme (follows the device setting)
-- [x] Tests: pipeline (pytest, 71) and web (Vitest, 41: formatting, search, rankings, missing-figure reasons, result-page data)
+- [x] Tests: pipeline (pytest, 73) and web (Vitest, 43: formatting, search, rankings, missing-figure reasons, result-page data)
 
 ## Phase 4: real data
 - [x] Workbook structure validator (fails loudly on layout change)
@@ -35,7 +35,7 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 - [x] Transactional upsert with revision log and import log; idempotent re-import
 - [x] Importer tests: missing values, duplicates, revisions, same-release re-import, malformed workbook, new layout, rollback (14 passing)
 - [x] Metrics: latest, previous-period and year-on-year change, 3-month rolling, 5-year average, 12-month high/low, percentile, trend word (`pipeline/ons/metrics.py`)
-- [x] Minimum-volume rule for percentages (30)
+- [x] Minimum-volume rule for percentages (30 a period; 90 for a 3-month total, no single-month fallback when too small)
 - [x] JSON shard export: `pnpm data:export` (`meta`, `search`, `overview`, `occupation/{soc4}`, `group/{soc3}`; 8 tests)
 - [x] Import the September 2026 release and spot-check values against the spreadsheet
 
@@ -53,7 +53,7 @@ Approved scope. Only items approved by the project owner live here; new ideas go
 ## Phase 5: polish
 - [x] Ranking pages: `/occupation/<job>` (every place) and `/location/<place>` (every job), Monthly/Quarterly, sort by adverts/rise/fall, 10 rows a page with a 25 option, region filter, job-group drill-down, linked from result pages
 - [ ] Public `/api/*` routes with input validation
-- [ ] About the data page (methodology, caveats, ONS notices)
+- [x] About the data page: release facts, Monthly/Quarterly levels, comparison and trend rules, missing-figure labels, every ONS notice with its wording (read from `meta.json`), limits, licence; linked from result and ranking pages
 - [ ] SEO: metadata, stable URLs, sitemap
 - [ ] Accessibility pass (contrast, keyboard, screen reader, text alternative for charts)
 - [ ] Caching headers

@@ -57,3 +57,28 @@ export function notFound(job: string, place: string): Missing {
 export function estimatedFor(period: string, notices: Notice[]): Notice | undefined {
   return notices.find((n) => n.kind === "estimated" && covers(n, period));
 }
+
+/** What each kind of ONS notice means on this site (About the data page). */
+export const NOTICE_LABEL: Record<Notice["kind"], string> = {
+  not_collected: LABEL.not_collected,
+  withheld: LABEL.withheld,
+  estimated: "Partly estimated by ONS",
+  caution: "Treat with caution",
+};
+
+const KIND_ORDER: Notice["kind"][] = ["not_collected", "withheld", "estimated", "caution"];
+
+/** Notices grouped by kind in the order above, newest first within each (ONS lists them newest first). */
+export function noticesByKind(notices: Notice[]): { kind: Notice["kind"]; notices: Notice[] }[] {
+  return KIND_ORDER.map((kind) => ({ kind, notices: notices.filter((n) => n.kind === kind) })).filter((g) => g.notices.length);
+}
+
+/** "Months: Jun 2025, Jul 2025 · Quarters: Q2 2025, Q3 2025" */
+export function noticePeriods(n: Notice): string {
+  return [
+    n.months.length ? `Months: ${n.months.map((p) => periodLabel(p, "mid")).join(", ")}` : "",
+    n.quarters.length ? `Quarters: ${n.quarters.map((p) => periodLabel(p, "short")).join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}

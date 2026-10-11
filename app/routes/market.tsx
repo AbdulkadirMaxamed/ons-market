@@ -354,7 +354,7 @@ function Result({
           : `the latest ${unit} with the same ${unit} a year earlier`}
         . Up 10% or more is <b className="font-medium">Growing</b>, down 10% or more is{" "}
         <b className="font-medium">Shrinking</b>, in between is <b className="font-medium">Steady</b>. Under{" "}
-        {MIN_VOLUME} adverts we don’t call a trend. This is our reading of ONS data, not an ONS measure.
+        {m.basis === "roll" ? `${MIN_VOLUME * 3} adverts over the 3 months` : `${MIN_VOLUME} adverts`} we don’t call a trend. This is our reading of ONS data, not an ONS measure.
       </p>
 
       {/* Chart with the Monthly/Quarterly switch and ranges */}
@@ -637,6 +637,11 @@ function AboutData({
           </ul>
         </div>
       )}
+      <p className="mb-4 text-[14px]">
+        <Link to="/about-data#method" className="underline underline-offset-2">
+          How we compare figures, and what the data can’t tell you ›
+        </Link>
+      </p>
     </details>
   );
 }

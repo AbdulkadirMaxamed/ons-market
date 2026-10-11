@@ -119,6 +119,22 @@ def test_monthly_prefers_the_three_month_window():
     assert m["basis"] == "roll" and m["trend"] == "up"
 
 
+def test_monthly_window_needs_an_average_of_30_a_month():
+    # Data entry administrators, Wales, Aug 2026: 59 against 31 over 3 months is under 90 a window.
+    v = [100] * 9 + [10, 10, 11] + [100] * 9 + [20, 20, 19]
+    m = series_metrics(v, months(24), "M")
+    assert m["roll"]["s"] == "small" and "pct" not in m["roll"]
+    assert m["basis"] == "roll" and m["trend"] == "small"
+
+
+def test_small_window_does_not_fall_back_to_a_big_single_month():
+    # Window 90 vs 85 is too small, though the single months (50 vs 35) would pass the 30 rule on their own.
+    v = [100] * 9 + [25, 25, 35] + [100] * 9 + [20, 20, 50]
+    m = series_metrics(v, months(24), "M")
+    assert m["yoy"]["s"] == "ok"
+    assert m["basis"] == "roll" and m["roll"]["s"] == "small" and m["trend"] == "small"
+
+
 def test_monthly_window_with_a_gap_falls_back_to_the_single_month():
     v = [100] * 12 + [100] * 9 + [None, 100, 105]
     m = series_metrics(v, months(24), "M")

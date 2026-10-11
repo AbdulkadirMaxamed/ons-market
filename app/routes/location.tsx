@@ -147,9 +147,13 @@ export default function Location({ loaderData }: Route.ComponentProps) {
         <Pager ranked={ranked} />
         <p className="mt-2.5 max-w-[80ch] text-[13px] text-ink-3">
           {view === "M"
-            ? "Change compares the last 3 months with the same 3 months a year earlier, or the single month where one of those months is missing."
+            ? "Change compares the last 3 months with the same 3 months a year earlier, or the single month when one of those months is missing."
             : "Change compares the quarter with the same quarter a year earlier."}{" "}
-          Under 30 adverts we don’t show a percentage, and those jobs are left out of “Biggest rise” and “Biggest fall”.
+          Under 30 adverts (90 over 3 months) we don’t show a percentage, and those jobs are left out of “Biggest rise” and
+          “Biggest fall”.{" "}
+          <Link to="/about-data#method" className="underline underline-offset-2">
+            How we compare figures
+          </Link>
         </p>
       </main>
       <SiteFooter />

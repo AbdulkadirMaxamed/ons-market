@@ -5,7 +5,8 @@ gave no figure (suppressed). Real zeros are kept and treated as values.
 
 Every comparison is a dict with a status `s`:
   ok       both figures exist and are at least MIN_VOLUME: `abs` and `pct` are given
-  small    both exist but one is under MIN_VOLUME: `abs` only, no percentage or trend word
+  small    both exist but one is under the minimum (MIN_VOLUME a period, so 3 × 30 for a 3-month total):
+           `abs` only, no percentage or trend word
   zero     the comparison figure is 0: `abs` only, no percentage
   missing  one of the figures doesn't exist
 """
@@ -26,13 +27,13 @@ ROLL = 3  # months in the monthly comparison window
 Series = Sequence[int | None]
 
 
-def change(current: float | None, base: float | None) -> dict:
+def change(current: float | None, base: float | None, min_volume: float = MIN_VOLUME) -> dict:
     if current is None or base is None:
         return {"s": "missing"}
     diff = _round(current - base)
     if base == 0:
         return {"s": "zero", "abs": diff}
-    if current < MIN_VOLUME or base < MIN_VOLUME:
+    if current < min_volume or base < min_volume:
         return {"s": "small", "abs": diff}
     return {"s": "ok", "abs": diff, "pct": round((current - base) / base * 100, 1)}
 
@@ -95,8 +96,10 @@ def series_metrics(values: Series, periods: Sequence[str], cadence: str) -> dict
     if cadence == "M":
         cur, base = _window_sum(values, li, ROLL), _window_sum(values, li - lag, ROLL)
         out["roll"] = {"from": periods[li - ROLL + 1] if li >= ROLL - 1 else None, "to": periods[li],
-                       "cur": cur, "base": base, **change(cur, base)}
-        if out["roll"]["s"] == "ok":  # ONS advises against single-month changes, so prefer the 3-month window
+                       "cur": cur, "base": base, **change(cur, base, MIN_VOLUME * ROLL)}
+        # ONS advises against single-month changes, so the 3-month window wins whenever it exists. Only a gap in it
+        # falls back to the single month; a window that's too small stays "small" rather than slipping through.
+        if out["roll"]["s"] != "missing":
             basis, out["basis"] = out["roll"], "roll"
     out["trend"] = trend(basis)
 
